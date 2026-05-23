@@ -1,0 +1,2856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CCMC Study Hub | Elite</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+ <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+/* ═══════════════════════════════════════
+   CCMC STUDY HUB — ELITE EDITION
+   Style Sheet v3.0
+   ═══════════════════════════════════════ */
+
+:root {
+    --bg: #050d1a;
+    --bg2: #080f1e;
+    --bg3: #0a1525;
+    --surface: #0e1d30;
+    --surface2: #111f33;
+    --surface3: #152540;
+
+    --primary: #00d4ff;
+    --primary2: #0099cc;
+    --accent: #38ecff;
+    --accent2: #7df8ff;
+    --green: #00f0b0;
+    --green2: #00c48a;
+    --danger: #ff4060;
+    --warning: #ffb830;
+
+    --text: #e8f4ff;
+    --text2: #9ec8e8;
+    --muted: rgba(158, 200, 232, 0.5);
+    --border: rgba(0, 212, 255, 0.1);
+    --glow: rgba(0, 212, 255, 0.15);
+
+    --sidebar-w: 280px;
+    --topbar-h: 62px;
+
+    --neu-dark: rgba(3, 8, 18, 0.9);
+    --neu-light: rgba(20, 80, 140, 0.4);
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0; padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: 'Space Grotesk', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    user-select: none;
+    min-height: 100vh;
+}
+
+/* Animated background */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 80% 50% at 15% 5%, rgba(0, 150, 220, 0.1) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 85% 90%, rgba(0, 240, 176, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse 40% 30% at 50% 50%, rgba(0, 100, 200, 0.04) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ═══════════════════════════════
+   FREEZE OVERLAY
+   ═══════════════════════════════ */
+#freezeOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 999999999;
+    background: transparent;
+    display: none;
+    touch-action: none;
+    pointer-events: auto;
+}
+
+/* ═══════════════════════════════
+   TIMER
+   ═══════════════════════════════ */
+#timerDisplay {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 99999;
+    background: var(--surface2);
+    border: 1px solid rgba(255, 64, 96, 0.3);
+    color: var(--danger);
+    padding: 8px 18px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    display: none;
+    letter-spacing: 0.06em;
+    box-shadow: 0 0 20px rgba(255, 64, 96, 0.2), 0 4px 14px var(--neu-dark);
+}
+
+/* ═══════════════════════════════
+   SIDEBAR
+   ═══════════════════════════════ */
+#sidebarBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(3, 8, 18, 0.75);
+    backdrop-filter: blur(6px);
+    z-index: 8000;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+#sidebarBackdrop.open { opacity: 1; }
+
+#sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--surface);
+    z-index: 9000;
+    transform: translateX(-100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    box-shadow: 8px 0 40px rgba(0, 0, 0, 0.5), 4px 0 20px rgba(0, 212, 255, 0.04);
+    overflow: hidden;
+}
+#sidebar.open { transform: translateX(0); }
+
+/* Sidebar glow accent */
+#sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--green), var(--accent));
+}
+
+/* Sidebar grid bg */
+#sidebar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(0, 212, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.025) 1px, transparent 1px);
+    background-size: 30px 30px;
+    pointer-events: none;
+}
+
+.sb-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 18px 16px;
+    position: relative;
+    z-index: 1;
+}
+
+.sb-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sb-logo-icon {
+    font-size: 28px;
+    width: 46px; height: 46px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.12);
+}
+
+.sb-logo-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text);
+}
+.sb-logo-sub {
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.sb-close {
+    width: 34px; height: 34px;
+    border: none;
+    border-radius: 10px;
+    background: var(--surface3);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    position: relative; z-index: 1;
+}
+.sb-close:active { transform: scale(0.9); }
+
+.sb-user-card {
+    margin: 0 14px 14px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+}
+.sb-user-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), transparent);
+}
+
+.sb-avatar {
+    width: 42px; height: 42px;
+    border-radius: 13px;
+    background: linear-gradient(135deg, var(--primary2), var(--accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--bg);
+    flex-shrink: 0;
+    box-shadow: 0 0 16px rgba(0, 212, 255, 0.3);
+}
+
+.sb-user-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+}
+.sb-user-badge {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+}
+
+.sb-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 6px 14px 10px;
+    position: relative; z-index: 1;
+}
+
+.sb-nav {
+    padding: 0 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    z-index: 1;
+}
+
+.sb-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--text2);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    width: 100%;
+}
+.sb-nav-item:hover, .sb-nav-item:active {
+    background: var(--surface3);
+    color: var(--text);
+}
+.sb-nav-item.active {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 240, 176, 0.08));
+    color: var(--accent);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+}
+
+.sb-nav-icon {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+.sb-nav-item.active .sb-nav-icon {
+    background: linear-gradient(135deg, var(--primary2), var(--accent));
+    color: var(--bg);
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.3);
+}
+
+.sb-nav-arrow {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0.6;
+}
+
+.sb-footer {
+    margin-top: auto;
+    padding: 16px 18px;
+    border-top: 1px solid var(--border);
+    position: relative;
+    z-index: 1;
+}
+.sb-version {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+}
+.sb-dev {
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-top: 3px;
+    opacity: 0.7;
+}
+
+/* ═══════════════════════════════
+   LOADING SCREEN
+   ═══════════════════════════════ */
+#loadingScreen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 99999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+#loadingScreen.fade-out {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.loader-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(0, 212, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridMove 8s linear infinite;
+}
+@keyframes gridMove {
+    0% { background-position: 0 0; }
+    100% { background-position: 40px 40px; }
+}
+
+.loader-inner {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
+.loader-logo {
+    width: 80px; height: 80px;
+    border-radius: 24px;
+    background: var(--surface);
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    margin: 0 auto 24px;
+    box-shadow: 0 0 40px rgba(0, 212, 255, 0.2), 0 0 80px rgba(0, 212, 255, 0.08);
+    animation: logoPulse 2.5s ease-in-out infinite;
+}
+@keyframes logoPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(0, 212, 255, 0.2); }
+    50% { transform: scale(1.05); box-shadow: 0 0 60px rgba(0, 212, 255, 0.35); }
+}
+
+.loader-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 5px;
+}
+
+.loader-sub {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 36px;
+}
+
+.loader-bar-wrap {
+    width: 200px;
+    height: 4px;
+    border-radius: 4px;
+    background: var(--surface2);
+    margin: 0 auto 14px;
+    overflow: hidden;
+}
+.loader-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--primary2), var(--accent), var(--green));
+    border-radius: 4px;
+    animation: barFill 2.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.6);
+}
+@keyframes barFill {
+    0% { width: 0%; }
+    50% { width: 70%; }
+    85% { width: 90%; }
+    100% { width: 100%; }
+}
+
+.loader-status {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* ═══════════════════════════════
+   ACCESS GATE
+   ═══════════════════════════════ */
+#accessGate {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 9999999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background-image:
+        linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+.gate-wrap {
+    width: 100%;
+    max-width: 360px;
+}
+
+.gate-screen {
+    display: none;
+    animation: popIn 0.4s cubic-bezier(0.34, 1.15, 0.64, 1);
+}
+.gate-screen.active { display: block; }
+
+@keyframes popIn {
+    from { transform: scale(0.88) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.gate-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 34px 26px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 212, 255, 0.06);
+}
+.gate-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--green));
+}
+
+.gate-icon-wrap {
+    width: 70px; height: 70px;
+    border-radius: 22px;
+    background: var(--surface2);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 20px;
+    box-shadow: 0 0 24px rgba(0, 212, 255, 0.15);
+}
+
+.gate-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: var(--text);
+}
+.gate-title.danger-text { color: var(--danger); }
+
+.gate-sub {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+    margin-bottom: 24px;
+    line-height: 1.65;
+}
+
+.gate-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--primary);
+    text-align: left;
+    margin-bottom: 8px;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    outline: none;
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    background: var(--bg2);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+input:focus {
+    border-color: rgba(0, 212, 255, 0.4);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.08);
+}
+input::placeholder { color: var(--muted); }
+
+/* Pending screen */
+.pending-anim {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid rgba(255, 184, 48, 0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 18px;
+    animation: floatPending 2.5s ease-in-out infinite;
+    box-shadow: 0 0 24px rgba(255, 184, 48, 0.15);
+}
+@keyframes floatPending {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.pending-name-pill {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 7px 20px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 18px;
+}
+
+.pending-dots {
+    display: flex; gap: 7px; justify-content: center;
+    margin: 14px 0 18px;
+}
+.pending-dots span {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--surface3);
+    animation: dotBounce 1.2s ease-in-out infinite;
+}
+.pending-dots span:nth-child(2) { animation-delay: 0.2s; }
+.pending-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotBounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-9px); opacity: 1; background: var(--warning); box-shadow: 0 4px 12px rgba(255, 184, 48, 0.5); }
+}
+
+.pending-status-row {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    padding: 11px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 10px;
+}
+.pending-status-row i { color: var(--warning); }
+
+.blocked-anim {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid rgba(255, 64, 96, 0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 18px;
+    box-shadow: 0 0 24px rgba(255, 64, 96, 0.15);
+    animation: blockedShake 0.6s cubic-bezier(.36, .07, .19, .97) both;
+}
+@keyframes blockedShake {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80% { transform: translate3d(4px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+    40%, 60% { transform: translate3d(6px, 0, 0); }
+}
+
+.blocked-info-row {
+    background: rgba(255, 64, 96, 0.08);
+    border: 1px solid rgba(255, 64, 96, 0.15);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 18px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    line-height: 1.5;
+    text-align: left;
+}
+.blocked-info-row i { color: var(--danger); font-size: 14px; flex-shrink: 0; }
+
+/* ═══════════════════════════════
+   ACTION BUTTONS
+   ═══════════════════════════════ */
+.action-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 14px;
+    color: var(--bg);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 10px;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.25);
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+.action-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+    border-radius: inherit;
+    pointer-events: none;
+}
+.action-btn:active { transform: scale(0.97); box-shadow: 0 2px 10px rgba(0, 212, 255, 0.2); }
+
+.action-btn.green {
+    background: linear-gradient(135deg, var(--green), var(--green2));
+    box-shadow: 0 4px 20px rgba(0, 240, 176, 0.25);
+}
+.action-btn.ghost {
+    background: var(--surface2);
+    color: var(--text2);
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    font-size: 13px;
+}
+.action-btn:last-child { margin-bottom: 0; }
+
+/* ═══════════════════════════════
+   OVERLAYS (Notify, About)
+   ═══════════════════════════════ */
+#notifyOverlay, #aboutOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(3, 8, 18, 0.8);
+    z-index: 210000;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(12px);
+}
+
+.sheet-card {
+    background: var(--surface);
+    width: 100%;
+    max-width: 520px;
+    border-radius: 28px 28px 0 0;
+    padding: 10px 24px max(36px, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    animation: sheetUp 0.35s cubic-bezier(0.34, 1.15, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+}
+.sheet-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--green));
+}
+
+@keyframes sheetUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.sheet-handle {
+    width: 40px; height: 4px;
+    border-radius: 2px;
+    background: rgba(0, 212, 255, 0.2);
+    margin: 14px auto 20px;
+}
+
+.sheet-icon {
+    width: 58px; height: 58px;
+    border-radius: 18px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 14px;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+}
+
+.sheet-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 10px;
+}
+.sheet-body {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+    text-align: center;
+    margin-bottom: 20px;
+}
+.sheet-body-sub {
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: 18px;
+    font-weight: 500;
+}
+
+.about-rows {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 4px 16px;
+    margin-bottom: 20px;
+}
+.ab-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(0, 212, 255, 0.06);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+}
+.ab-row:last-child { border-bottom: none; }
+.ab-row i { color: var(--accent); width: 18px; font-size: 14px; }
+.ab-row b { color: var(--text); font-weight: 700; }
+.ab-row a { color: var(--accent); text-decoration: none; font-weight: 700; }
+
+/* ═══════════════════════════════
+   HOME PAGE
+   ═══════════════════════════════ */
+#homePage {
+    display: none;
+    min-height: 100vh;
+    padding-bottom: 30px;
+    position: relative; z-index: 1;
+}
+
+/* Topbar */
+.topbar {
+    position: sticky;
+    top: 0; z-index: 500;
+    height: var(--topbar-h);
+    background: rgba(5, 13, 26, 0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+}
+
+.menu-btn {
+    width: 40px; height: 40px;
+    border: none;
+    border-radius: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+}
+.menu-btn:active { transform: scale(0.92); }
+
+.topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.topbar-logo { font-size: 22px; }
+.topbar-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.notif-btn {
+    width: 40px; height: 40px;
+    border: none;
+    border-radius: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--warning);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    position: relative;
+}
+.notif-btn:active { transform: scale(0.92); }
+.notif-btn::after {
+    content: '';
+    position: absolute;
+    top: 8px; right: 8px;
+    width: 7px; height: 7px;
+    background: var(--danger);
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+}
+
+/* Hero */
+.hero-section {
+    margin: 16px 14px;
+    border-radius: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3), 0 0 30px rgba(0, 212, 255, 0.04);
+}
+
+.hero-bg-lines {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(135deg, rgba(0, 150, 220, 0.1) 0%, transparent 50%),
+        linear-gradient(315deg, rgba(0, 240, 176, 0.06) 0%, transparent 50%);
+    background-image:
+        linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+.hero-bg-lines::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 70% 60% at 10% 20%, rgba(0, 150, 220, 0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 90% 80%, rgba(0, 240, 176, 0.08) 0%, transparent 55%);
+}
+
+.hero-content {
+    position: relative; z-index: 1;
+    padding: 28px 24px 16px;
+}
+
+.hero-greeting {
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 8px;
+    letter-spacing: 0.05em;
+}
+
+.hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(22px, 6vw, 30px);
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 10px;
+}
+
+.hero-sub {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+    line-height: 1.6;
+}
+
+.hero-stats {
+    position: relative; z-index: 1;
+    display: flex;
+    align-items: center;
+    padding: 18px 24px;
+    margin-top: 6px;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid var(--border);
+}
+
+.hstat {
+    flex: 1;
+    text-align: center;
+}
+.hstat-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+}
+.hstat-lbl {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 3px;
+}
+.hstat-divider {
+    width: 1px;
+    height: 36px;
+    background: var(--border);
+}
+
+/* Section label */
+.section-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--primary);
+    padding: 16px 16px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+/* Chapter cards */
+.chapter-container {
+    padding: 0 12px;
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    animation: fadeUp 0.4s ease both;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+.card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.03), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.card:active {
+    transform: scale(0.98);
+    border-color: rgba(0, 212, 255, 0.25);
+}
+.card:active::before { opacity: 1; }
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.module-img {
+    width: 50px; height: 50px;
+    border-radius: 14px;
+    object-fit: cover;
+    flex-shrink: 0;
+    margin-right: 13px;
+    border: 1px solid var(--border);
+}
+
+.ch-name {
+    font-size: 15px;
+    font-weight: 700;
+}
+.ch-meta {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ch-meta i { color: var(--primary); }
+
+.ch-play {
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 240, 176, 0.1));
+    border: 1px solid rgba(0, 212, 255, 0.2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent);
+    font-size: 12px;
+}
+
+/* ═══════════════════════════════
+   QUIZ PAGE
+   ═══════════════════════════════ */
+#quizPage {
+    display: none;
+    padding: 0 14px 120px;
+    max-width: 640px;
+    margin: auto; width: 100%;
+    position: relative; z-index: 1;
+}
+
+.quiz-topbar {
+    position: sticky;
+    top: 0; z-index: 100;
+    background: rgba(5, 13, 26, 0.97);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 13px 14px;
+    display: flex; align-items: center; gap: 12px;
+    margin: 0 -14px;
+}
+
+.quiz-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    flex: 1;
+}
+
+.q-progress-wrap { margin: 0 -14px; }
+.q-progress-track { height: 3px; background: var(--surface2); }
+.q-progress-fill {
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary2), var(--accent), var(--green));
+    width: 0%;
+    transition: width 0.4s;
+    box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+}
+
+.q-count-badge {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.sound-btn {
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    border: none;
+}
+.sound-btn.muted { color: var(--muted); }
+.sound-btn:active { transform: scale(0.9); }
+
+.q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 22px;
+    border-radius: 22px;
+    margin: 14px 0;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.2);
+}
+.q-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary2), var(--accent), var(--green));
+}
+
+.q-num-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.question-text {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    word-wrap: break-word;
+}
+
+.q-image {
+    width: 100%;
+    max-height: 220px;
+    object-fit: contain;
+    border-radius: 14px;
+    margin-bottom: 14px;
+    display: block;
+    border: 1px solid var(--border);
+}
+
+.option-tile {
+    padding: 13px 16px;
+    border-radius: 16px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    display: flex; align-items: center;
+    cursor: pointer;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    gap: 12px;
+    transition: all 0.2s;
+}
+.option-tile:active { transform: scale(0.99); }
+
+.opt-letter {
+    width: 28px; height: 28px;
+    border-radius: 9px;
+    flex-shrink: 0;
+    background: var(--surface3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--muted);
+    transition: all 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.option-tile span { flex: 1; }
+.option-tile i { font-size: 16px; color: var(--muted); flex-shrink: 0; }
+
+.option-tile.active {
+    background: linear-gradient(135deg, rgba(0, 150, 214, 0.2), rgba(0, 212, 255, 0.1));
+    border-color: rgba(0, 212, 255, 0.3);
+}
+.option-tile.active .opt-letter {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: var(--bg);
+    box-shadow: 0 0 12px rgba(0, 212, 255, 0.4);
+}
+.option-tile.active i { color: var(--accent); }
+
+/* Real-time Validation */
+.option-tile.correct-flash {
+    background: linear-gradient(135deg, rgba(0, 240, 176, 0.2), rgba(0, 240, 176, 0.1)) !important;
+    border-color: rgba(0, 240, 176, 0.4) !important;
+}
+.option-tile.correct-flash .opt-letter {
+    background: var(--green) !important;
+    color: var(--bg) !important;
+}
+.option-tile.wrong-flash {
+    background: linear-gradient(135deg, rgba(255, 64, 96, 0.2), rgba(255, 64, 96, 0.1)) !important;
+    border-color: rgba(255, 64, 96, 0.4) !important;
+}
+.option-tile.wrong-flash .opt-letter {
+    background: var(--danger) !important;
+    color: var(--bg) !important;
+}
+
+.submit-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 200;
+    padding: 13px 18px max(16px, env(safe-area-inset-bottom));
+    background: rgba(5, 13, 26, 0.97);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════
+   RESULT PAGE
+   ═══════════════════════════════ */
+#resultPage {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 99999;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.page-topbar {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+.page-topbar-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.icon-btn {
+    width: 42px; height: 42px;
+    border-radius: 13px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+.icon-btn:active { transform: scale(0.9); }
+.icon-btn.danger-btn { color: var(--danger); }
+
+.res-score-area {
+    padding: 24px 20px 18px;
+    text-align: center;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+
+.score-ring {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    margin: 0 auto 14px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+.score-ring::before {
+    content: '';
+    position: absolute;
+    width: 84px; height: 84px;
+    border-radius: 50%;
+    background: var(--surface);
+    box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+
+#resScore {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative; z-index: 1;
+}
+
+#scoreMsg {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.res-chips {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+.res-chip {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid;
+}
+.chip-c { background: rgba(0, 240, 176, 0.1); color: var(--green); border-color: rgba(0, 240, 176, 0.2); }
+.chip-w { background: rgba(255, 64, 96, 0.1); color: var(--danger); border-color: rgba(255, 64, 96, 0.2); }
+.chip-s { background: rgba(255, 184, 48, 0.1); color: var(--warning); border-color: rgba(255, 184, 48, 0.2); }
+
+.filter-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 10px 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+}
+.filter-tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+    flex-shrink: 0;
+    padding: 8px 18px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'Space Grotesk', sans-serif;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.tab.active {
+    background: linear-gradient(135deg, var(--primary2), var(--accent));
+    color: var(--bg);
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(0, 212, 255, 0.25);
+}
+
+#reviewList {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 14px;
+    background: var(--bg);
+}
+
+.review-item {
+    padding: 18px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-sizing: border-box;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* ═══════════════════════════════
+   HISTORY & LEADERBOARD
+   ═══════════════════════════════ */
+#historyPage, #leaderboardPage {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 99999;
+    flex-direction: column;
+}
+
+#historyList, #leaderboardList {
+    padding: 14px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.history-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 17px;
+    border-radius: 18px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.history-card:active { transform: scale(0.98); border-color: rgba(0, 212, 255, 0.25); }
+
+.lb-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 14px;
+}
+
+.lb-rank {
+    width: 42px; height: 42px;
+    border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+.lb-rank.gold { background: rgba(255, 214, 10, 0.12); color: #ffd60a; border: 1px solid rgba(255, 214, 10, 0.2); }
+.lb-rank.silver { background: rgba(200, 200, 200, 0.08); color: #ccc; border: 1px solid rgba(200, 200, 200, 0.15); }
+.lb-rank.bronze { background: rgba(255, 107, 53, 0.1); color: #ff6b35; border: 1px solid rgba(255, 107, 53, 0.2); }
+.lb-rank.other { background: var(--surface2); color: var(--muted); }
+
+.lb-info { flex: 1; min-width: 0; }
+.lb-name { font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-chapter { font-size: 11px; color: var(--muted); font-weight: 500; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-score { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; flex-shrink: 0; }
+
+/* ═══════════════════════════════
+   BAN & WARN MODALS
+   ═══════════════════════════════ */
+.ban-overlay-wrap {
+    position: fixed; inset: 0;
+    background: rgba(3, 8, 18, 0.97);
+    z-index: 3000000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    backdrop-filter: blur(24px);
+    animation: fadeInOverlay 0.4s ease;
+}
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.ban-card {
+    background: var(--surface);
+    width: 100%; max-width: 340px;
+    border-radius: 28px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 64, 96, 0.25);
+    box-shadow: 0 20px 60px rgba(255, 64, 96, 0.15);
+    animation: popInCard 0.45s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+@keyframes popInCard {
+    from { transform: scale(0.8) translateY(30px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.ban-top {
+    background: linear-gradient(135deg, #ff2d55, #c0003c);
+    padding: 32px 20px 26px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+.ban-top::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 20px;
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+}
+
+.ban-icon {
+    width: 70px; height: 70px;
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px;
+    position: relative; z-index: 1;
+    animation: banIconPulse 1.5s ease-in-out infinite;
+}
+@keyframes banIconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+}
+
+.ban-top-title {
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.2em;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+    position: relative; z-index: 1;
+}
+
+.ban-body { padding: 22px 22px 26px; text-align: center; }
+.ban-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.ban-title span { color: var(--danger); }
+.ban-sub { font-size: 13px; color: var(--muted); font-weight: 500; line-height: 1.6; margin-bottom: 20px; }
+.ban-detail {
+    background: rgba(255, 64, 96, 0.08);
+    border: 1px solid rgba(255, 64, 96, 0.15);
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-size: 11px; color: var(--muted); font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+}
+.ban-detail i { color: var(--danger); font-size: 12px; flex-shrink: 0; }
+
+/* Warn popup */
+.warn-popup-wrap {
+    position: fixed; inset: 0;
+    background: rgba(3, 8, 18, 0.88);
+    z-index: 2000000;
+    display: flex; align-items: flex-end; justify-content: center;
+    backdrop-filter: blur(16px);
+    padding: 0;
+}
+.warn-popup-sheet {
+    background: var(--surface);
+    width: 100%; max-width: 520px;
+    border-radius: 28px 28px 0 0;
+    padding: 10px 24px max(36px, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    animation: sheetUp 0.38s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+.warn-handle {
+    width: 40px; height: 4px;
+    border-radius: 2px;
+    background: rgba(0, 212, 255, 0.2);
+    margin: 14px auto 18px;
+}
+.warn-icon-wrap {
+    width: 56px; height: 56px;
+    border-radius: 18px;
+    margin: 0 auto 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+}
+.warn-msg-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; text-align: center; margin-bottom: 8px; }
+.warn-msg-body { font-size: 14px; color: var(--muted); font-weight: 500; line-height: 1.65; text-align: center; margin-bottom: 20px; }
+
+/* Security Overlay */
+#securityOverlay {
+    position: fixed; inset: 0;
+    background: rgba(3, 8, 18, 0.0);
+    backdrop-filter: blur(0px);
+    display: none;
+    justify-content: center; align-items: center;
+    z-index: 2000000;
+    padding: 24px;
+    transition: background 0.3s, backdrop-filter 0.3s;
+}
+#securityOverlay.visible {
+    background: rgba(3, 8, 18, 0.97);
+    backdrop-filter: blur(28px);
+}
+.sec-card {
+    background: var(--surface);
+    border-radius: 28px;
+    max-width: 340px; width: 100%;
+    border: 1px solid rgba(255, 64, 96, 0.2);
+    box-shadow: 0 20px 60px rgba(255, 64, 96, 0.12);
+    overflow: hidden;
+    animation: secCardIn 0.45s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+@keyframes secCardIn {
+    from { transform: scale(0.7) translateY(30px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+.sec-banner {
+    background: linear-gradient(135deg, #ff5470, #c0003c);
+    padding: 28px 20px 22px;
+    position: relative; overflow: hidden;
+}
+.sec-banner::after {
+    content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 20px; background: var(--surface);
+    border-radius: 20px 20px 0 0;
+}
+.sec-icon-wrap {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.3);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 8px;
+    font-size: 32px;
+    position: relative; z-index: 1;
+    animation: iconPulse 1.2s ease-in-out infinite;
+}
+@keyframes iconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+}
+.sec-banner-title {
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.2em; color: rgba(255,255,255,0.7);
+    text-transform: uppercase;
+    position: relative; z-index: 1; text-align: center;
+}
+.sec-body { padding: 22px 24px 28px; }
+.sec-warn-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+.sec-warn-title span { color: var(--danger); }
+.sec-warn-sub { font-size: 13px; font-weight: 500; color: var(--muted); line-height: 1.6; margin-bottom: 20px; }
+.warn-dots { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+.warn-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    transition: all 0.35s cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+.warn-dot.active {
+    background: var(--danger);
+    box-shadow: 0 0 14px rgba(255, 64, 96, 0.7);
+    border-color: transparent;
+    transform: scale(1.25);
+}
+.sec-countdown-wrap {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 10px;
+}
+.sec-countdown-wrap i { color: var(--danger); font-size: 14px; flex-shrink: 0; }
+#secCountdownText { font-size: 12px; font-weight: 700; color: var(--muted); flex: 1; }
+#secCountdownNum { font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--danger); min-width: 24px; text-align: right; }
+.sec-card.final-warn {
+    border-color: rgba(255, 64, 96, 0.4);
+    box-shadow: 0 20px 60px rgba(255, 64, 96, 0.3);
+    animation: secCardIn 0.45s cubic-bezier(0.34, 1.3, 0.64, 1), finalShake 0.5s 0.5s ease;
+}
+@keyframes finalShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+}
+.sec-card.final-warn .sec-banner { background: linear-gradient(135deg, #ff1744, #8b0000); }
+
+/* ═══════════════════════════════
+   UTILITY
+   ═══════════════════════════════ */
+.gradient-text {
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.glow-cyan { color: var(--accent); }
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-thumb { background: rgba(0, 212, 255, 0.12); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ══ FREEZE OVERLAY ══ -->
+<div id="freezeOverlay"></div>
+
+<!-- ══ TIMER ══ -->
+<div id="timerDisplay">⏱ 00:00</div>
+
+<!-- ══ SIDEBAR OVERLAY (click to close) ══ -->
+<div id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
+<!-- ══ SIDEBAR ══ -->
+<nav id="sidebar">
+    <div class="sb-header">
+        <div class="sb-logo">
+            <span class="sb-logo-icon">🎓</span>
+            <div>
+                <div class="sb-logo-title">Marine 07</div>
+                <div class="sb-logo-sub">Elite Edition</div>
+            </div>
+        </div>
+        <button class="sb-close" onclick="closeSidebar()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+
+    <div class="sb-user-card" id="sbUserCard">
+        <div class="sb-avatar" id="sbAvatar">?</div>
+        <div class="sb-user-info">
+            <div class="sb-user-name" id="sbUserName">Loading...</div>
+            <div class="sb-user-badge"><i class="fa-solid fa-circle" style="color:var(--green);font-size:8px;"></i> Active</div>
+        </div>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <div class="sb-nav">
+        <button class="sb-nav-item active" id="navHome" onclick="goHome(); closeSidebar();">
+            <div class="sb-nav-icon"><i class="fa-solid fa-house-chimney"></i></div>
+            <span>Home</span>
+            <div class="sb-nav-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
+        <button class="sb-nav-item" id="navHistory" onclick="showHistory(); closeSidebar();">
+            <div class="sb-nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <span>My History</span>
+            <div class="sb-nav-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
+        <button class="sb-nav-item" id="navLeaderboard" onclick="showLeaderboard(); closeSidebar();">
+            <div class="sb-nav-icon"><i class="fa-solid fa-trophy"></i></div>
+            <span>Leaderboard</span>
+            <div class="sb-nav-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
+        <button class="sb-nav-item" id="navResult" onclick="smartBack(); closeSidebar();">
+            <div class="sb-nav-icon"><i class="fa-solid fa-chart-bar"></i></div>
+            <span>Last Result</span>
+            <div class="sb-nav-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
+    </div>
+
+    <div class="sb-divider"></div>
+
+    <div class="sb-nav">
+        <button class="sb-nav-item" onclick="document.getElementById('aboutOverlay').style.display='flex'; closeSidebar();">
+            <div class="sb-nav-icon"><i class="fa-solid fa-circle-info"></i></div>
+            <span>About App</span>
+            <div class="sb-nav-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </button>
+    </div>
+
+    <div class="sb-footer">
+        <div class="sb-version">v3.0.0 · Anti-Cheat Edition</div>
+        <div class="sb-dev">by </div>
+    </div>
+</nav>
+
+<!-- ══ LOADING SCREEN ══ -->
+<div id="loadingScreen">
+    <div class="loader-inner">
+        <div class="loader-logo"></div>
+        <div class="loader-title">Marine 07</div>
+        <div class="loader-sub">Elite Edition</div>
+        <div class="loader-bar-wrap">
+            <div class="loader-bar"></div>
+        </div>
+        <div class="loader-status" id="loaderStatus">Initializing...</div>
+    </div>
+    <div class="loader-grid"></div>
+</div>
+
+<!-- ══ ACCESS GATE ══ -->
+<div id="accessGate">
+    <div class="gate-wrap">
+        <!-- Name Screen -->
+        <div class="gate-screen active" id="nameScreen">
+            <div class="gate-card">
+                <div class="gate-icon-wrap">
+                    <span>🎓</span>
+                </div>
+                <div class="gate-title">Welcome!</div>
+                <div class="gate-sub">Enter your full name to request access to CCMC Study Hub.</div>
+                <label class="gate-label">YOUR FULL NAME</label>
+                <input type="text" id="userNameInput" placeholder="e.g. Mohd Danish Ansari" onkeydown="if(event.key==='Enter')submitNameRequest()">
+                <button class="action-btn" onclick="submitNameRequest()">
+                    <i class="fa-solid fa-arrow-right-to-bracket"></i> REQUEST ACCESS
+                </button>
+            </div>
+        </div>
+
+        <!-- Pending Screen -->
+        <div class="gate-screen" id="pendingScreen">
+            <div class="gate-card">
+                <div class="pending-anim">⏳</div>
+                <div class="gate-title">Request Sent!</div>
+                <div class="pending-name-pill" id="pendingNamePill">—</div>
+                <div class="gate-sub">Your access request has been sent to the admin. Please wait for approval.</div>
+                <div class="pending-status-row">
+                    <i class="fa-solid fa-circle-dot"></i>
+                    <span id="pendingStatusText">Waiting for admin approval...</span>
+                </div>
+                <div class="pending-dots"><span></span><span></span><span></span></div>
+                <button class="action-btn ghost" onclick="checkPendingStatus()">
+                    <i class="fa-solid fa-rotate"></i> Check Status
+                </button>
+            </div>
+        </div>
+
+        <!-- Blocked Screen -->
+        <div class="gate-screen" id="blockedScreen">
+            <div class="gate-card">
+                <div class="blocked-anim">🚫</div>
+                <div class="gate-title danger-text">Access Denied</div>
+                <div class="gate-sub">Your access has been revoked by the admin. Please contact the administrator for help.</div>
+                <div class="blocked-info-row">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>This decision was made by the system admin. Your data is safe.</span>
+                </div>
+                <button class="action-btn ghost" onclick="checkPendingStatus()">
+                    <i class="fa-solid fa-rotate"></i> Check Status Again
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ NOTIFY OVERLAY ══ -->
+<div id="notifyOverlay" onclick="if(event.target.id==='notifyOverlay')this.style.display='none'">
+    <div class="sheet-card" onclick="event.stopPropagation()">
+        <div class="sheet-handle"></div>
+        <div class="sheet-icon">🔔</div>
+        <div class="sheet-title">Notice Board</div>
+        <p id="notifyText" class="sheet-body">Loading…</p>
+        <button class="action-btn" onclick="document.getElementById('notifyOverlay').style.display='none'">
+            <i class="fa-solid fa-check"></i> Ok
+        </button>
+    </div>
+</div>
+
+<!-- ══ ABOUT OVERLAY ══ -->
+<div id="aboutOverlay" onclick="closeAbout(event)">
+    <div class="sheet-card" onclick="event.stopPropagation()">
+        <div class="sheet-handle"></div>
+        <div class="sheet-icon">🎓</div>
+        <div class="sheet-title">CCMC Hub <span class="gradient-text">Elite</span></div>
+        <p class="sheet-body-sub">The Ultimate Study Companion</p>
+        <div class="about-rows">
+            <div class="ab-row"><i class="fa-solid fa-user-tie"></i><span>Developer: <b></b></span></div>
+            <div class="ab-row"><i class="fa-solid fa-link"></i><span>Contact: <b><a href="https://instagram.com/_danishansari_" target="_blank">Instagram</a></b></span></div>
+            <div class="ab-row"><i class="fa-solid fa-code-branch"></i><span>Version: <b>3.0.0 (Access Gate)</b></span></div>
+            <div class="ab-row"><i class="fa-solid fa-shield-virus"></i><span>Security: <b>Anti-Cheat + Access Control</b></span></div>
+            <div class="ab-row"><i class="fa-solid fa-database"></i><span>Backend: <b>Server</b></span></div>
+        </div>
+        <button class="action-btn ghost" onclick="document.getElementById('aboutOverlay').style.display='none'">
+            CLOSE
+        </button>
+    </div>
+</div>
+
+<!-- ══ HOME PAGE ══ -->
+<div id="homePage">
+    <!-- Top Bar -->
+    <div class="topbar">
+        <button class="menu-btn" onclick="openSidebar()">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="topbar-brand">
+            <span class="topbar-logo">🎓</span>
+            <span class="topbar-title">CCMC</span>
+        </div>
+        <button class="notif-btn" id="notifBtn" onclick="document.getElementById('notifyOverlay').style.display='flex'">
+            <i class="fa-solid fa-bell"></i>
+        </button>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-bg-lines"></div>
+        <div class="hero-content">
+            <div id="hiUser" class="hero-greeting">Hello! 👋</div>
+            <h1 class="hero-title"> <span class="gradient-text">Online Questions</span> ✦</h1>
+            <p class="hero-sub">Start your assessment. Track your progress. Dominate the leaderboard.</p>
+        </div>
+        <div class="hero-stats">
+            <div class="hstat">
+                <div class="hstat-val glow-cyan" id="statChaps">—</div>
+                <div class="hstat-lbl">Chapters</div>
+            </div>
+            <div class="hstat-divider"></div>
+            <div class="hstat">
+                <div class="hstat-val" style="color:var(--green);" id="statAttempts">—</div>
+                <div class="hstat-lbl">Attempts</div>
+            </div>
+            <div class="hstat-divider"></div>
+            <div class="hstat">
+                <div class="hstat-val" style="color:var(--warning);" id="statBest">—</div>
+                <div class="hstat-lbl">Best Score</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chapters -->
+    <div class="section-label">
+        <i class="fa-solid fa-layer-group"></i> ALL CHAPTERS
+    </div>
+    <div class="chapter-container" id="chapterList"></div>
+</div>
+
+<!-- ══ QUIZ PAGE ══ -->
+<div id="quizPage">
+    <div class="quiz-topbar">
+        <button class="icon-btn" onclick="goHome()"><i class="fa-solid fa-chevron-left"></i></button>
+        <div class="quiz-title" id="currentTitle">Quiz</div>
+        <button class="sound-btn" id="soundToggleBtn" onclick="toggleSound()">
+            <i class="fa-solid fa-volume-high" id="soundIcon"></i>
+        </button>
+        <div class="q-count-badge" id="qAnsweredBadge">0 / 0</div>
+    </div>
+    <div class="q-progress-wrap">
+        <div class="q-progress-track">
+            <div class="q-progress-fill" id="qProgressFill"></div>
+        </div>
+    </div>
+    <div id="questionsContainer"></div>
+    <div class="submit-bar">
+        <button class="action-btn green" onclick="finishQuiz()">
+            <i class="fa-solid fa-paper-plane"></i> SUBMIT ASSESSMENT
+        </button>
+    </div>
+</div>
+
+<!-- ══ RESULT PAGE ══ -->
+<div id="resultPage">
+    <div class="page-topbar">
+        <div class="icon-btn" onclick="goHome()"><i class="fa-solid fa-house"></i></div>
+        <div class="page-topbar-title" id="resTitle">Result</div>
+        <div style="width:42px;"></div>
+    </div>
+    <div class="res-score-area">
+        <div class="score-ring">
+            <div id="resScore">0%</div>
+        </div>
+        <div id="scoreMsg">Keep going!</div>
+        <div class="res-chips">
+            <div class="res-chip chip-c" id="chipC">✓ 0</div>
+            <div class="res-chip chip-w" id="chipW">✗ 0</div>
+            <div class="res-chip chip-s" id="chipS">— 0</div>
+        </div>
+    </div>
+    <div class="filter-tabs">
+        <button class="tab active" onclick="filterResults('all',this)">All</button>
+        <button class="tab" onclick="filterResults('correct',this)">✓ Correct</button>
+        <button class="tab" onclick="filterResults('wrong',this)">✗ Wrong</button>
+        <button class="tab" onclick="filterResults('skipped',this)">— Skipped</button>
+    </div>
+    <div id="reviewList"></div>
+</div>
+
+<!-- ══ HISTORY PAGE ══ -->
+<div id="historyPage">
+    <div class="page-topbar">
+        <div class="icon-btn" onclick="goHome()"><i class="fa-solid fa-arrow-left"></i></div>
+        <div class="page-topbar-title">My History</div>
+        <div class="icon-btn danger-btn" onclick="clearHistory()"><i class="fa-solid fa-trash-can"></i></div>
+    </div>
+    <div id="historyList"></div>
+</div>
+
+<!-- ══ LEADERBOARD PAGE ══ -->
+<div id="leaderboardPage">
+    <div class="page-topbar">
+        <div class="icon-btn" onclick="goHome()"><i class="fa-solid fa-arrow-left"></i></div>
+        <div class="page-topbar-title">🏆 Leaderboard</div>
+        <div style="width:42px;"></div>
+    </div>
+    <div id="leaderboardList"></div>
+</div>
+
+<script>
+
+// ═══════════════════════════════════════
+// CCMC STUDY HUB — ELITE EDITION
+// app.js v3.0
+// ═══════════════════════════════════════
+
+// ══ FIREBASE INIT ══
+const firebaseConfig = {
+    apiKey: "AIzaSyDPOtXmvVmk00FDUB0khBldybTJItrjXkE",
+    databaseURL: "https://ccmc-personal-default-rtdb.firebaseio.com",
+    projectId: "ccmc-personal"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ══ GLOBALS ══
+const LETTERS = ['A', 'B', 'C', 'D'];
+let userName = '', userAccessId = '', accessApproved = false;
+let activeQuiz = [], userAnswers = [], timerInterval, currentAnalysis = [];
+let violationCount = 0, isShowingWarning = false, warnCountdownTimer = null;
+let currentChapterId = '', soundEnabled = true, audioCtx = null;
+let _pubRef = null;
+let questionStartTime = 0;
+let accessListener = null;
+
+// ═══════════════════════════════
+// SIDEBAR
+// ═══════════════════════════════
+function openSidebar() {
+    document.getElementById('sidebar').classList.add('open');
+    const bd = document.getElementById('sidebarBackdrop');
+    bd.style.display = 'block';
+    setTimeout(() => bd.classList.add('open'), 10);
+}
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    const bd = document.getElementById('sidebarBackdrop');
+    bd.classList.remove('open');
+    setTimeout(() => bd.style.display = 'none', 300);
+}
+
+function setSidebarActive(navId) {
+    document.querySelectorAll('.sb-nav-item').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById(navId);
+    if (el) el.classList.add('active');
+}
+
+// ═══════════════════════════════
+// HELPER UTILS
+// ═══════════════════════════════
+function normalizeName(n) {
+    return (n || '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+function nameToKey(n) {
+    return normalizeName(n).replace(/[^a-z0-9]/g, '_');
+}
+function getDeviceInfo() {
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    const ua = navigator.userAgent;
+    const browser = ua.includes('Chrome') ? 'Chrome' : ua.includes('Firefox') ? 'Firefox' : ua.includes('Safari') ? 'Safari' : 'Other';
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    return {
+        device: isMobile ? 'Mobile' : 'Desktop',
+        browser,
+        screenSize: window.screen.width + 'x' + window.screen.height,
+        network: conn ? (conn.effectiveType || conn.type || 'unknown') : 'unknown',
+        networkRtt: conn ? (conn.rtt || 0) : 0
+    };
+}
+
+function showGateScreen(id) {
+    document.querySelectorAll('.gate-screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+// ══ LOADER MESSAGES ══
+const _loaderMsgs = ['Initializing...', 'Connecting to server...', 'Verifying access...', 'Loading modules...', 'Almost ready...'];
+let _loaderMsgIdx = 0;
+const _loaderStatusEl = document.getElementById('loaderStatus');
+const _loaderMsgTimer = setInterval(() => {
+    if (_loaderMsgIdx < _loaderMsgs.length - 1) {
+        _loaderMsgIdx++;
+        if (_loaderStatusEl) _loaderStatusEl.innerText = _loaderMsgs[_loaderMsgIdx];
+    }
+}, 500);
+
+function hideLoader(cb) {
+    clearInterval(_loaderMsgTimer);
+    if (_loaderStatusEl) _loaderStatusEl.innerText = 'Ready!';
+    setTimeout(() => {
+        const ls = document.getElementById('loadingScreen');
+        if (ls) {
+            ls.classList.add('fade-out');
+            setTimeout(() => {
+                ls.style.display = 'none';
+                if (cb) cb();
+            }, 500);
+        } else {
+            if (cb) cb();
+        }
+    }, 200);
+}
+
+// ═══════════════════════════════
+// INIT
+// ═══════════════════════════════
+window.onload = () => {
+    const savedName = localStorage.getItem('ccmc_user');
+    const savedId = localStorage.getItem('ccmc_access_id');
+    if (!savedName) {
+        hideLoader(() => {
+            document.getElementById('accessGate').style.display = 'flex';
+            showGateScreen('nameScreen');
+        });
+        return;
+    }
+    userName = savedName;
+    userAccessId = savedId || '';
+    checkAccessStatus();
+};
+
+// ═══════════════════════════════
+// ACCESS GATE LOGIC
+// ═══════════════════════════════
+function checkAccessStatus() {
+    const key = nameToKey(userName);
+    db.ref('user_access/' + key).once('value', snap => {
+        const data = snap.val();
+        if (!data) { autoSendRequest(); return; }
+
+        if (data.status === 'approved' || data.status === 'frozen') {
+            userAccessId = data.accessId || '';
+            localStorage.setItem('ccmc_access_id', userAccessId);
+            hideLoader(() => {
+                grantAccess();
+                listenForApproval(key);
+            });
+        } else if (data.status === 'pending') {
+            hideLoader(() => {
+                document.getElementById('accessGate').style.display = 'flex';
+                showPendingScreen();
+                listenForApproval(key);
+            });
+        } else if (data.status === 'blocked') {
+            hideLoader(() => {
+                document.getElementById('accessGate').style.display = 'flex';
+                showGateScreen('blockedScreen');
+                listenForApproval(key);
+            });
+        } else {
+            autoSendRequest();
+        }
+    });
+}
+
+function autoSendRequest() {
+    const key = nameToKey(userName);
+    db.ref('user_access/' + key).set({
+        name: userName,
+        normalizedName: normalizeName(userName),
+        status: 'pending',
+        accessId: '',
+        requestedAt: Date.now(),
+        requestedAtStr: new Date().toLocaleString(),
+        isOldUser: true
+    }).then(() => {
+        hideLoader(() => {
+            document.getElementById('accessGate').style.display = 'flex';
+            showPendingScreen();
+            listenForApproval(key);
+        });
+    });
+}
+
+function submitNameRequest() {
+    const val = document.getElementById('userNameInput').value.trim();
+    if (val.length < 2) { alert('Please enter your full name'); return; }
+    userName = val;
+    localStorage.setItem('ccmc_user', userName);
+    const key = nameToKey(userName);
+    db.ref('user_access/' + key).once('value', snap => {
+        const data = snap.val();
+        if (data && data.status === 'approved') {
+            userAccessId = data.accessId || '';
+            localStorage.setItem('ccmc_access_id', userAccessId);
+            grantAccess();
+            return;
+        }
+        if (data && data.status === 'pending') { showPendingScreen(); listenForApproval(key); return; }
+        if (data && data.status === 'blocked') { showGateScreen('blockedScreen'); return; }
+        db.ref('user_access/' + key).set({
+            name: userName,
+            normalizedName: normalizeName(userName),
+            status: 'pending',
+            accessId: '',
+            requestedAt: Date.now(),
+            requestedAtStr: new Date().toLocaleString(),
+            isOldUser: false
+        }).then(() => {
+            showPendingScreen();
+            listenForApproval(key);
+        });
+    });
+}
+
+function showPendingScreen() {
+    document.getElementById('pendingNamePill').innerText = userName;
+    document.getElementById('pendingStatusText').innerText = 'Waiting for admin approval...';
+    showGateScreen('pendingScreen');
+}
+
+function listenForApproval(key) {
+    if (accessListener) {
+        db.ref('user_access/' + key + '/status').off('value', accessListener);
+        accessListener = null;
+    }
+    accessListener = function(snap) {
+        const status = snap.val();
+        const fOverlay = document.getElementById('freezeOverlay');
+        const gate = document.getElementById('accessGate');
+        if (!status) return;
+
+        if (status === 'frozen') {
+            if (fOverlay) fOverlay.style.display = 'block';
+            if (gate) gate.style.display = 'none';
+        } else {
+            if (fOverlay) fOverlay.style.display = 'none';
+        }
+
+        if (status === 'approved') {
+            if (gate && gate.style.display !== 'none') {
+                gate.style.display = 'none';
+                grantAccess();
+            }
+        } else if (status === 'pending') {
+            if (document.getElementById('homePage').style.display === 'block') {
+                forceLogout();
+            } else {
+                if (gate) gate.style.display = 'flex';
+                showPendingScreen();
+            }
+        } else if (status === 'blocked') {
+            forceLogout();
+        }
+    };
+    db.ref('user_access/' + key + '/status').on('value', accessListener);
+}
+
+function checkPendingStatus() {
+    document.getElementById('pendingStatusText').innerText = 'Checking...';
+    checkAccessStatus();
+}
+
+function grantAccess() {
+    const gate = document.getElementById('accessGate');
+    if (gate) gate.style.display = 'none';
+
+    const h = new Date().getHours();
+    const g = h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening';
+    document.getElementById('hiUser').innerText = g + ', ' + userName.split(' ')[0] + '! 👋';
+
+    // Update sidebar user info
+    const firstName = userName.split(' ')[0];
+    const initials = userName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    document.getElementById('sbUserName').innerText = userName;
+    document.getElementById('sbAvatar').innerText = initials;
+
+    document.getElementById('homePage').style.display = 'block';
+    setSidebarActive('navHome');
+    loadChapters();
+    loadStats();
+    listenForNotifications();
+    registerPublicPresence();
+
+    const key = nameToKey(userName);
+    listenForApproval(key);
+}
+
+let _blockListenerRef = null;
+function startBlockListener() {
+    const key = nameToKey(userName);
+    if (_blockListenerRef) db.ref('user_access/' + key + '/status').off('value', _blockListenerRef);
+    _blockListenerRef = function(snap) {
+        const status = snap.val();
+        if (!status) return;
+        if (status === 'blocked') forceLogout();
+    };
+    db.ref('user_access/' + key + '/status').on('value', _blockListenerRef);
+}
+
+function forceLogout() {
+    removePublicPresence();
+    clearInterval(timerInterval);
+    document.getElementById('timerDisplay').style.display = 'none';
+    ['homePage', 'quizPage', 'resultPage', 'historyPage', 'leaderboardPage'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById('accessGate').style.display = 'flex';
+    showGateScreen('blockedScreen');
+}
+
+// ═══════════════════════════════
+// PRESENCE & MONITORING
+// ═══════════════════════════════
+function registerPublicPresence() {
+    if (!userName) return;
+    const _key = nameToKey(userName);
+    _pubRef = db.ref('public_live/' + _key);
+    const di = getDeviceInfo();
+    _pubRef.set({
+        name: userName,
+        accessId: userAccessId,
+        joinedAt: Date.now(),
+        page: 'Home Screen',
+        lastAction: 'App Launched',
+        violations: 0,
+        liveCorrect: 0, liveWrong: 0,
+        isBanned: false,
+        device: di.device, browser: di.browser,
+        screenSize: di.screenSize,
+        network: di.network, networkRtt: di.networkRtt,
+        idleStatus: 'ACTIVE', scrollPct: 0
+    });
+    _pubRef.onDisconnect().remove();
+    listenForAdminSystem();
+    startMonitoring();
+}
+
+function removePublicPresence() {
+    if (_pubRef) {
+        _pubRef.onDisconnect().cancel();
+        _pubRef.remove();
+    }
+}
+
+function startMonitoring() {
+    if (!_pubRef) return;
+    let _idleTimer = null;
+    function resetIdle() {
+        clearTimeout(_idleTimer);
+        _pubRef.update({ idleStatus: 'ACTIVE' });
+        _idleTimer = setTimeout(() => {
+            if (_pubRef) _pubRef.update({ idleStatus: 'IDLE_60s' });
+        }, 60000);
+    }
+    ['touchstart', 'touchmove', 'click', 'keydown', 'scroll'].forEach(ev => {
+        document.addEventListener(ev, resetIdle, { passive: true });
+    });
+    resetIdle();
+
+    let _scrollThrottle = null;
+    window.addEventListener('scroll', () => {
+        if (_scrollThrottle) return;
+        _scrollThrottle = setTimeout(() => {
+            _scrollThrottle = null;
+            const pct = Math.min(100, Math.round(((window.scrollY + window.innerHeight) / document.documentElement.scrollHeight) * 100));
+            if (_pubRef) _pubRef.update({ scrollPct: pct });
+        }, 1500);
+    }, { passive: true });
+
+    const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (conn) {
+        conn.addEventListener('change', () => {
+            if (_pubRef) _pubRef.update({
+                network: conn.effectiveType || conn.type || 'unknown',
+                networkRtt: conn.rtt || 0
+            });
+        });
+    }
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        if (document.getElementById('quizPage').style.display === 'block') handleViolation();
+        removePublicPresence();
+    } else {
+        if (userName && document.getElementById('accessGate').style.display === 'none') registerPublicPresence();
+    }
+});
+window.addEventListener('blur', () => {
+    if (document.getElementById('quizPage').style.display === 'block') handleViolation();
+});
+window.addEventListener('beforeunload', removePublicPresence);
+
+function listenForAdminSystem() {
+    if (!_pubRef) return;
+    _pubRef.on('value', snap => {
+        const u = snap.val();
+        if (u && u.isBanned) {
+            showBannedScreen();
+        } else if (u && !u.isBanned && document.getElementById('banOverlay')) {
+            location.reload();
+        }
+    });
+    _pubRef.child('remote_msg').on('value', snap => {
+        const data = snap.val();
+        if (data && data.text) {
+            showHackerPopup(data.text);
+            _pubRef.child('remote_msg').remove();
+        }
+    });
+    _pubRef.child('remote_cmd').on('value', snap => {
+        const cmd = snap.val();
+        if (cmd && cmd.action === 'KICK') {
+            showBannedScreen();
+            _pubRef.child('remote_cmd').remove();
+        }
+    });
+}
+
+function trackActivity(loc, action) {
+    if (_pubRef) {
+        _pubRef.update({
+            page: loc, lastAction: action,
+            lastSeen: new Date().toLocaleTimeString()
+        });
+    }
+}
+
+function showBannedScreen() {
+    if (document.getElementById('banOverlay')) return;
+    const div = document.createElement('div');
+    div.id = 'banOverlay';
+    div.className = 'ban-overlay-wrap';
+    div.innerHTML = `<div class="ban-card"><div class="ban-top"><div class="ban-icon">🚫</div><div class="ban-top-title">Access Terminated</div></div><div class="ban-body"><div class="ban-title">You've been <span>Banned</span></div><div class="ban-sub">The admin has terminated your access. This action was taken due to a policy violation.</div><div class="ban-detail"><i class="fa-solid fa-circle-exclamation"></i><span>Contact the administrator to appeal this decision.</span></div></div></div>`;
+    document.body.appendChild(div);
+}
+
+function showHackerPopup(msg) {
+    const existing = document.getElementById('adminRemotePopup');
+    if (existing) existing.remove();
+    const popup = document.createElement('div');
+    popup.id = 'adminRemotePopup';
+    popup.className = 'warn-popup-wrap';
+    popup.innerHTML = `<div class="warn-popup-sheet"><div class="warn-handle"></div><div class="warn-icon-wrap">📢</div><div class="warn-msg-title">Message from Admin</div><div class="warn-msg-body">${msg}</div><button class="action-btn" onclick="document.getElementById('adminRemotePopup').remove()"><i class="fa-solid fa-check"></i> Got it!</button></div>`;
+    document.body.appendChild(popup);
+}
+
+// ═══════════════════════════════
+// SOUND ENGINE
+// ═══════════════════════════════
+function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+}
+function playTone(freq, type, duration, vol) {
+    if (!soundEnabled) return;
+    try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(vol, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + duration);
+    } catch (e) {}
+}
+function playSelect() { playTone(660, 'sine', 0.08, 0.18); }
+function playSubmit() {
+    playTone(523, 'sine', 0.1, 0.18);
+    setTimeout(() => playTone(659, 'sine', 0.1, 0.2), 100);
+    setTimeout(() => playTone(784, 'sine', 0.22, 0.25), 200);
+}
+function playWarning() {
+    playTone(440, 'square', 0.08, 0.15);
+    setTimeout(() => playTone(330, 'square', 0.12, 0.18), 90);
+}
+function playTimerEnd() {
+    playTone(300, 'sawtooth', 0.05, 0.2);
+    setTimeout(() => playTone(250, 'sawtooth', 0.08, 0.2), 60);
+    setTimeout(() => playTone(200, 'sawtooth', 0.15, 0.25), 130);
+}
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const icon = document.getElementById('soundIcon');
+    const btn = document.getElementById('soundToggleBtn');
+    if (soundEnabled) {
+        icon.className = 'fa-solid fa-volume-high';
+        btn.classList.remove('muted');
+        playSelect();
+    } else {
+        icon.className = 'fa-solid fa-volume-xmark';
+        btn.classList.add('muted');
+    }
+}
+
+// ═══════════════════════════════
+// STATS
+// ═══════════════════════════════
+function loadStats() {
+    const hist = JSON.parse(localStorage.getItem('ccmc_history')) || [];
+    document.getElementById('statAttempts').innerText = hist.length || '0';
+    document.getElementById('statBest').innerText = hist.length ? Math.max(...hist.map(h => h.score)) + '%' : '—';
+}
+
+// ═══════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════
+function listenForNotifications() {
+    db.ref('app_notification').on('value', snap => {
+        const data = snap.val();
+        if (data && data.message) {
+            document.getElementById('notifyText').innerText = data.message;
+            document.getElementById('notifyOverlay').style.display = 'flex';
+        }
+    });
+}
+
+// ═══════════════════════════════
+// CHAPTERS
+// ═══════════════════════════════
+function loadChapters() {
+    const key = nameToKey(userName);
+    db.ref('chapter_settings').on('value', setSnap => {
+        const settings = setSnap.val() || {};
+        db.ref('user_access/' + key + '/allowedChapters').on('value', allowSnap => {
+            const allowed = allowSnap.val();
+            db.ref('quiz').on('value', quizSnap => {
+                const cont = document.getElementById('chapterList');
+                cont.innerHTML = "";
+                let count = 0;
+                quizSnap.forEach(child => {
+                    const chData = settings[child.key] || {};
+                    if (chData.hidden) return;
+                    if (allowed !== null && !allowed[child.key]) return;
+                    count++;
+                    cont.innerHTML +=
+                        '<div class="card" onclick="startQuiz(\'' + child.key + '\')" style="animation-delay:' + count * 0.06 + 's">' +
+                        '<div style="display:flex;align-items:center;">' +
+                        '<img src="' + (chData.image || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_p7Thz6eVOw5mHbNEFQUdabjK5BGxRwKWXNmpDZ5G-ehDiAJ0MJlEmAUv&s=10') + '" class="module-img" onerror="this.src=\'https://i.postimg.cc/XvxfNJPG/CC-20240615-132415-(1).png\'">' +
+                        '<div><div class="ch-name">' + child.key + '</div>' +
+                        '<div class="ch-meta"><i class="fa-regular fa-clock"></i>' + (chData.timer || 0) + ' MIN &nbsp;&nbsp;<i class="fa-solid fa-list-check"></i>' + child.numChildren() + ' QNS</div>' +
+                        '</div></div>' +
+                        '<div class="ch-play"><i class="fa-solid fa-play" style="font-size:12px;"></i></div></div>';
+                });
+                document.getElementById('statChaps').innerText = count;
+            });
+        });
+    });
+}
+
+// ═══════════════════════════════
+// QUIZ
+// ═══════════════════════════════
+function startQuiz(id) {
+    violationCount = 0;
+    isShowingWarning = false;
+    currentChapterId = id;
+    document.getElementById('currentTitle').innerText = id;
+    trackActivity('Quiz: ' + id, 'Starting Assessment');
+
+    db.ref('chapter_settings/' + id).once('value', setSnap => {
+        const settings = setSnap.val() || {};
+        const timeLimit = settings.timer || 0;
+
+        db.ref('quiz/' + id).once('value', snap => {
+            if (!snap.exists()) return alert("No questions found!");
+            let raw = [];
+            snap.forEach(q => { raw.push(q.val()); });
+
+            activeQuiz = raw.sort(() => Math.random() - 0.5).map(item => {
+                let opts = [...item.options];
+                let corr = opts[item.ans];
+                let shuf = [...opts].sort(() => Math.random() - 0.5);
+                return { ...item, options: shuf, ans: shuf.indexOf(corr) };
+            });
+
+            userAnswers = new Array(activeQuiz.length).fill(null);
+            renderQuestions();
+
+            document.getElementById('homePage').style.display = 'none';
+            document.getElementById('quizPage').style.display = 'block';
+
+            if (timeLimit > 0) runTimer(timeLimit * 60);
+            questionStartTime = Date.now();
+
+            if (_pubRef) _pubRef.update({
+                liveCorrect: 0, liveWrong: 0,
+                totalAnswered: 0, currentQuestion: 0,
+                totalQuestions: activeQuiz.length,
+                lastAction: 'Quiz Started: ' + id
+            });
+            window.scrollTo(0, 0);
+        });
+    });
+}
+
+function renderQuestions() {
+    const cont = document.getElementById('questionsContainer');
+    cont.innerHTML = "";
+    const total = activeQuiz.length;
+    updateProgress();
+    activeQuiz.forEach((q, idx) => {
+        let imgHtml = q.img ? '<img src="' + q.img + '" class="q-image" onerror="this.style.display=\'none\'">' : '';
+        let opts = q.options.map((o, oi) =>
+            '<div class="option-tile q-' + idx + '" onclick="selectOpt(' + idx + ',' + oi + ',this)">' +
+            '<div class="opt-letter">' + LETTERS[oi] + '</div><span>' + o + '</span>' +
+            '<i class="fa-regular fa-circle"></i></div>'
+        ).join('');
+        cont.innerHTML +=
+            '<div class="q-card">' +
+            '<div class="q-num-tag"><i class="fa-solid fa-circle-question"></i> Q' + (idx + 1) + ' / ' + total + '</div>' +
+            imgHtml + '<div class="question-text">' + q.q + '</div>' + opts + '</div>';
+    });
+}
+
+function selectOpt(qi, oi, el) {
+    if (userAnswers[qi] !== null) return;
+
+    const correctAnsIndex = activeQuiz[qi].ans;
+    const isCorrect = (oi === correctAnsIndex);
+    userAnswers[qi] = oi;
+
+    const allOptions = document.querySelectorAll('.q-' + qi);
+    allOptions.forEach(opt => {
+        opt.style.pointerEvents = 'none';
+        opt.style.opacity = '0.6';
+    });
+    el.style.opacity = '1';
+
+    if (isCorrect) {
+        el.classList.add('correct-flash');
+        el.querySelector('i').className = 'fa-solid fa-circle-check';
+        playTone(880, 'sine', 0.1, 0.2);
+    } else {
+        el.classList.add('wrong-flash');
+        el.querySelector('i').className = 'fa-solid fa-circle-xmark';
+        allOptions[correctAnsIndex].classList.add('correct-flash');
+        allOptions[correctAnsIndex].style.opacity = '1';
+        allOptions[correctAnsIndex].querySelector('i').className = 'fa-solid fa-circle-check';
+        playTone(200, 'sawtooth', 0.2, 0.2);
+    }
+
+    updateProgress();
+
+    const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
+    const totalAnswered = userAnswers.filter(a => a !== null).length;
+    const liveCorrect = userAnswers.filter((ans, i) => ans !== null && ans === activeQuiz[i].ans).length;
+    const liveWrong = userAnswers.filter((ans, i) => ans !== null && ans !== activeQuiz[i].ans).length;
+
+    if (_pubRef) {
+        _pubRef.update({
+            currentQuestion: qi + 1,
+            totalAnswered, liveCorrect, liveWrong,
+            lastAction: 'Answered Q' + (qi + 1) + (isCorrect ? ' (✓)' : ' (✗)')
+        });
+    }
+    questionStartTime = Date.now();
+}
+
+function updateProgress() {
+    const answered = userAnswers.filter(a => a !== null).length;
+    const total = activeQuiz.length;
+    const pct = total > 0 ? (answered / total * 100) : 0;
+    const fill = document.getElementById('qProgressFill');
+    const badge = document.getElementById('qAnsweredBadge');
+    if (fill) fill.style.width = pct + '%';
+    if (badge) badge.innerText = answered + ' / ' + total;
+}
+
+function runTimer(duration) {
+    const display = document.getElementById('timerDisplay');
+    display.style.display = 'block';
+    let timer = duration;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        let mins = parseInt(timer / 60, 10);
+        let secs = parseInt(timer % 60, 10);
+        display.textContent = "⏱ " + (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+        if (timer <= 60) display.style.color = 'var(--danger)';
+        if (--timer < 0) {
+            clearInterval(timerInterval);
+            playTimerEnd();
+            setTimeout(finishQuiz, 300);
+        }
+    }, 1000);
+}
+
+function finishQuiz() {
+    clearInterval(timerInterval);
+    document.getElementById('timerDisplay').style.display = 'none';
+    playSubmit();
+
+    let correctCount = 0;
+    currentAnalysis = [];
+    activeQuiz.forEach((q, i) => {
+        const isCorrect = userAnswers[i] === q.ans;
+        const isSkipped = userAnswers[i] === null;
+        if (isCorrect) correctCount++;
+        currentAnalysis.push({
+            question: q.q,
+            img: q.img || null,
+            selectedOption: isSkipped ? "Skipped" : q.options[userAnswers[i]],
+            correctOption: q.options[q.ans],
+            status: isCorrect ? 'correct' : (isSkipped ? 'skipped' : 'wrong')
+        });
+    });
+
+    const score = Math.round((correctCount / activeQuiz.length) * 100);
+    const chapter = document.getElementById('currentTitle').innerText;
+
+    db.ref('user_attempts').push({ user: userName, chapter, score, timestamp: new Date().toLocaleString() });
+
+    let history = JSON.parse(localStorage.getItem('ccmc_history')) || [];
+    history.unshift({ chapter, score, analysis: currentAnalysis, time: new Date().toLocaleString() });
+    localStorage.setItem('ccmc_history', JSON.stringify(history));
+
+    trackActivity('Result: ' + chapter, 'Scored ' + score + '%');
+    showResultPage(score, currentAnalysis, chapter);
+}
+
+// ═══════════════════════════════
+// RESULT
+// ═══════════════════════════════
+function showResultPage(score, analysis, chapter) {
+    currentAnalysis = analysis;
+    document.querySelector('.score-ring').style.background =
+        'conic-gradient(var(--primary) 0deg, var(--accent) ' + (score * 3.6) + 'deg, rgba(255,255,255,0.04) ' + (score * 3.6) + 'deg)';
+    document.getElementById('resScore').innerText = score + "%";
+    document.getElementById('resTitle').innerText = chapter;
+    document.getElementById('scoreMsg').innerText =
+        score >= 90 ? '🏆 Outstanding!' :
+        score >= 70 ? '🎉 Great Job!' :
+        score >= 50 ? '💪 Good Effort!' : '📚 Keep Practicing!';
+
+    const c = analysis.filter(a => a.status === 'correct').length;
+    const w = analysis.filter(a => a.status === 'wrong').length;
+    const s = analysis.filter(a => a.status === 'skipped').length;
+    document.getElementById('chipC').innerText = '✓ ' + c;
+    document.getElementById('chipW').innerText = '✗ ' + w;
+    document.getElementById('chipS').innerText = '— ' + s;
+
+    filterResults('all', document.querySelector('.tab'));
+    ['homePage', 'historyPage', 'quizPage', 'leaderboardPage'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById('resultPage').style.display = 'flex';
+    window.scrollTo(0, 0);
+}
+
+function filterResults(type, btn) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    const cont = document.getElementById('reviewList');
+    cont.innerHTML = "";
+    currentAnalysis.forEach((item, i) => {
+        if (type !== 'all' && item.status !== type) return;
+        let color = "var(--warning)", statusLabel = "SKIPPED";
+        if (item.status === 'correct') { color = "var(--green)"; statusLabel = "✓ CORRECT"; }
+        else if (item.status === 'wrong') { color = "var(--danger)"; statusLabel = "✗ WRONG"; }
+        let imgHtml = item.img ? '<img src="' + item.img + '" style="width:100%;max-height:170px;object-fit:contain;border-radius:12px;margin-bottom:11px;border:1px solid var(--border);" onerror="this.style.display=\'none\'">' : '';
+        cont.innerHTML +=
+            '<div class="review-item" style="border-left:3px solid ' + color + '">' +
+            '<div style="display:flex;justify-content:space-between;margin-bottom:8px;">' +
+            '<span style="font-size:10px;font-weight:700;letter-spacing:0.1em;color:' + color + '">' + statusLabel + '</span>' +
+            '<span style="font-size:10px;color:var(--muted);font-family:\'JetBrains Mono\',monospace;">Q. ' + (i + 1) + '</span></div>' +
+            imgHtml +
+            '<div style="font-weight:600;margin-bottom:10px;line-height:1.5;font-size:14px;">' + item.question + '</div>' +
+            '<div style="font-size:13px;margin-bottom:4px;color:var(--muted);">Selected: <span style="font-weight:700;color:' +
+            (item.status === 'wrong' ? 'var(--danger)' : item.status === 'correct' ? 'var(--green)' : 'var(--warning)') + '">' + item.selectedOption + '</span></div>' +
+            '<div style="font-size:13px;color:var(--muted);">Correct: <span style="font-weight:700;color:var(--green);">' + item.correctOption + '</span></div></div>';
+    });
+    if (!cont.innerHTML) cont.innerHTML = '<div style="text-align:center;color:var(--muted);padding:40px;font-size:14px;font-weight:500;">Nothing here!</div>';
+}
+
+// ═══════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════
+function goHome() {
+    violationCount = 0;
+    isShowingWarning = false;
+    clearInterval(timerInterval);
+    clearInterval(warnCountdownTimer);
+    document.getElementById('timerDisplay').style.display = 'none';
+    ['resultPage', 'quizPage', 'historyPage', 'leaderboardPage'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    const secOverlay = document.getElementById('securityOverlay');
+    if (secOverlay) secOverlay.style.display = 'none';
+    document.getElementById('notifyOverlay').style.display = 'none';
+    document.getElementById('aboutOverlay').style.display = 'none';
+
+    document.getElementById('homePage').style.display = 'block';
+    setSidebarActive('navHome');
+    trackActivity('Home Screen', 'Browsing Chapters');
+    loadStats();
+}
+
+function showHistory() {
+    setSidebarActive('navHistory');
+    trackActivity('History Page', 'Viewing Score Records');
+    document.getElementById('homePage').style.display = 'none';
+    document.getElementById('historyPage').style.display = 'flex';
+    renderHistoryList();
+}
+
+function renderHistoryList() {
+    const list = document.getElementById('historyList');
+    let data = JSON.parse(localStorage.getItem('ccmc_history')) || [];
+    if (data.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:var(--muted);margin-top:60px;font-size:14px;font-weight:500;"><i class="fa-solid fa-clock-rotate-left" style="font-size:38px;opacity:0.15;display:block;margin-bottom:14px;"></i>No history yet!</div>';
+        return;
+    }
+    list.innerHTML = data.map((item, index) => {
+        const sc = item.score;
+        const tc = sc >= 70 ? 'var(--green)' : sc >= 40 ? 'var(--warning)' : 'var(--danger)';
+        return '<div class="history-card" onclick="viewHistoryDetail(' + index + ')">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+            '<div><div style="font-weight:700;font-size:15px;">' + item.chapter + '</div>' +
+            '<div style="font-size:11px;color:var(--muted);margin-top:4px;font-weight:500;"><i class="fa-regular fa-clock"></i> ' + item.time + '</div></div>' +
+            '<div style="text-align:right;"><div style="font-size:22px;font-weight:800;color:' + tc + ';font-family:\'Syne\',sans-serif;">' + sc + '%</div>' +
+            '<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:0.06em;">VIEW <i class="fa-solid fa-chevron-right"></i></div></div></div></div>';
+    }).join('');
+}
+
+function viewHistoryDetail(index) {
+    let data = JSON.parse(localStorage.getItem('ccmc_history')) || [];
+    let record = data[index];
+    if (record && record.analysis) showResultPage(record.score, record.analysis, record.chapter);
+}
+
+
+
+function clearHistory() {
+    if (confirm("Clear all history records?")) {
+        localStorage.removeItem('ccmc_history');
+        renderHistoryList();
+    }
+}
+
+function closeAbout(e) {
+    if (e.target.id === "aboutOverlay") document.getElementById('aboutOverlay').style.display = 'none';
+}
+
+function smartBack() {
+    if (document.referrer !== "" && window.history.length > 1) window.history.back();
+    else window.location.href = "https://danishansaris04.github.io/result/";
+}
+
+// Block right-click
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+</script>
+</body>
+  </html>
