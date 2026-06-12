@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+  <title>CCMC Access & ID Control Panel</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --b0: #010a0e;
+      --b1: #031218;
+      --b2: #071c26;
+      --b3: #0d2535;
+      --t0: #00d4cc;
+      --t1: #00a8a2;
+      --ta: rgba(0,212,204,.10);
+      --ta2: rgba(0,212,204,.18);
+      --p2: #a78bfa;
+      --sg: #00e87a;
+      --sr: #ff3a5c;
+      --sy: #ffb020;
+      --sga: rgba(0,232,122,.10);
+      --sra: rgba(255,58,92,.10);
+      --saa: rgba(255,176,32,.10);
+      --tx1: #d4eef0;
+      --tx3: rgba(212,238,240,.30);
+      --tx4: rgba(212,238,240,.14);
+      --bd1: rgba(0,212,204,.18);
+      --bd2: rgba(0,212,204,.30);
+      --bd3: rgba(0,212,204,.50);
+      --r1: 4px;
+    }
+
+    *, *::before, *::after { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      -webkit-tap-highlight-color: transparent; 
+    }
+    
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--b0);
+      color: var(--tx1);
+      min-height: 100vh;
+      padding: 20px;
+      background-image: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(0,30,46,.8) 0%, transparent 70%);
+    }
+
+    /* Fullscreen Master Loader Shield */
+    #master-loader {
+      position: fixed;
+      inset: 0;
+      background: var(--b0);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    #master-loader p {
+      color: var(--t0);
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+
+    /* Main UI Container */
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      display: none;
+    }
+
+    .header-panel {
+      background: var(--b1);
+      border: 1px solid var(--bd2);
+      padding: 20px;
+      border-radius: var(--r1);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand h1 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    .brand h1 span { color: var(--t0); }
+    .brand p { font-size: 11px; color: var(--tx3); margin-top: 2px; }
+
+    /* Nav Tabs Section */
+    .nav-tabs {
+      display: flex;
+      background: var(--b1);
+      border: 1px solid var(--bd1);
+      padding: 4px;
+      border-radius: var(--r1);
+      gap: 4px;
+      margin-bottom: 14px;
+    }
+    .nav-btn {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      color: var(--tx3);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .nav-btn.active {
+      background: var(--ta);
+      color: var(--t0);
+      border: 1px solid var(--bd2);
+    }
+
+    /* Sub-panels switcher logic */
+    .sub-panel { display: none; }
+    .sub-panel.active { display: block; }
+
+    .search-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--b2);
+      border: 1px solid var(--bd1);
+      border-radius: var(--r1);
+      padding: 11px 14px;
+      margin-bottom: 14px;
+    }
+    .search-container i { color: var(--tx4); font-size: 13px; }
+    .search-container input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--tx1);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+
+    /* Request Cards */
+    .u-rcard {
+      background: var(--b1);
+      border: 1px solid var(--bd1);
+      border-radius: var(--r1);
+      margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .u-rcard::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, var(--t0), transparent 60%); opacity: .4;
+    }
+    .u-rhead { padding: 12px 14px 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .u-rname { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .u-rtime { font-size: 11px; color: var(--tx4); white-space: nowrap; }
+    .u-rbody { padding: 4px 14px 14px; }
+    .u-rid-row { display: flex; gap: 7px; margin-bottom: 10px; }
+    
+    .u-rid-inp {
+      flex: 1; padding: 10px 12px; background: var(--b2); border: 1px solid var(--bd1);
+      border-radius: var(--r1); color: var(--t0); font-family: monospace;
+      font-size: 14px; font-weight: bold; outline: none; letter-spacing: .05em;
+    }
+
+    /* ID Table Management Elements */
+    .u-trow {
+      background: var(--b1);
+      border: 1px solid var(--bd1);
+      border-radius: var(--r1);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+      gap: 6px 12px;
+      align-items: center;
+    }
+    .u-tc-name { grid-column: 1; font-size: 14px; font-weight: 600; }
+    .u-tc-acts { grid-column: 2; grid-row: 1 / 3; display: flex; align-items: center; gap: 6px; }
+    .u-tc-meta { grid-column: 1; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    
+    .u-tid { font-family: monospace; font-size: 11px; font-weight: bold; color: var(--t0); background: var(--ta); border: 1px solid var(--bd2); padding: 2px 6px; border-radius: 2px; }
+    .u-tdate { font-size: 11px; color: var(--tx4); }
+
+    /* Badges Status styling */
+    .u-badge { padding: 2px 7px; border-radius: 2px; font-size: 10px; font-weight: 600; border: 1px solid; }
+    .ubg-g { border-color: rgba(0,232,122,.3); color: var(--sg); background: var(--sga); }
+    .ubg-r { border-color: rgba(255,58,92,.3); color: var(--sr); background: var(--sra); }
+    .ubg-y { border-color: rgba(255,176,32,.3); color: var(--sy); background: var(--saa); }
+    .ubg-p { border-color: var(--bd2); color: var(--t0); background: var(--ta); }
+
+    /* Buttons Config */
+    .u-btn {
+      padding: 10px 14px; border-radius: var(--r1); border: none; cursor: pointer;
+      font-weight: 600; font-size: 12px; font-family: inherit;
+      display: inline-flex; align-items: center; gap: 6px;
+      white-space: nowrap; transition: all .2s;
+    }
+    .u-btn-p { background: var(--ta); color: var(--t0); border: 1px solid var(--bd2); }
+    .u-btn-g { background: linear-gradient(135deg, var(--sg), #009e50); color: #001a0a; }
+    .u-tbtn { padding: 6px 10px; border-radius: var(--r1); border: 1px solid var(--bd1); background: var(--b2); cursor: pointer; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; color: var(--tx3); transition: all 0.2s; }
+    .u-tbtn:hover { background: var(--b3); border-color: var(--bd2); color: var(--tx1); }
+    .u-tbtn-edit { color: var(--t0); border-color: var(--bd2); background: var(--ta); }
+    .u-tbtn-del { color: var(--sr); border-color: rgba(255,58,92,.25); background: var(--sra); }
+    .u-tbtn-unblock { color: var(--sg); border-color: rgba(0,232,122,.25); background: var(--sga); }
+
+    .u-ap-btn {
+      flex: 1; padding: 11px; border: none; border-radius: var(--r1);
+      background: linear-gradient(135deg, var(--sg), #009e50); color: #001a0a;
+      font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .u-rj-btn {
+      padding: 11px 16px; border: 1px solid rgba(255,58,92,.3); border-radius: var(--r1);
+      background: var(--sra); color: var(--sr); font-size: 12px; font-weight: 600; 
+      cursor: pointer; font-family: inherit; display: flex;
+      align-items: center; justify-content: center; gap: 6px;
+    }
+
+    .u-empty { text-align: center; padding: 60px 20px; color: var(--tx4); }
+    .u-empty i { font-size: 30px; opacity: .15; display: block; margin-bottom: 12px; }
+    .u-empty p { font-size: 13px; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<div id="master-loader">
+  <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--t0); font-size: 32px;"></i>
+  <p>System Syncing...</p>
+</div>
+
+<div class="container" id="main-content">
+  
+  <div class="header-panel">
+    <div class="brand">
+      <h1>CCMC <span>Control Panel</span></h1>
+      <p>Requests &amp; Identity Core</p>
+    </div>
+    <div id="mass-action-area">
+      <button class="u-btn u-btn-g" onclick="approveAll()"><i class="fa-solid fa-check-double"></i> Approve All</button>
+    </div>
+  </div>
+
+  <nav class="nav-tabs">
+    <button class="nav-btn active" id="tabBtnRequests" onclick="switchMainTab('requests')">
+      <i class="fa-solid fa-inbox"></i><span>Access Requests</span>
+    </button>
+    <button class="nav-btn" id="tabBtnIdManager" onclick="switchMainTab('idmanager')">
+      <i class="fa-solid fa-id-card"></i><span>ID Manager</span>
+    </button>
+  </nav>
+
+  <div id="panel-requests" class="sub-panel active">
+    <div class="search-container">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="reqSearch" placeholder="Pending student ka naam dhundo..." oninput="renderRequests()">
+    </div>
+    <div id="reqList"></div>
+  </div>
+
+  <div id="panel-idmanager" class="sub-panel">
+    <div class="search-container">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="idSearch" placeholder="Student ka naam ya access ID dhundo..." oninput="renderIdTable()">
+    </div>
+    <div id="idTableBody"></div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script>
+  const ccmcConfig = {
+    apiKey: "AIzaSyDPOtXmvVmk00FDUB0khBldybTJItrjXkE",
+    authDomain: "ccmc-personal.firebaseapp.com",
+    databaseURL: "https://ccmc-personal-default-rtdb.firebaseio.com",
+    projectId: "ccmc-personal",
+    storageBucket: "ccmc-personal.firebasestorage.app",
+    messagingSenderId: "1013480839170",
+    appId: "1:1013480839170:web:d81d8b0403347b9d3bef1b"
+  };
+
+  const cApp = firebase.initializeApp(ccmcConfig, "CCMC");
+  const cdb  = cApp.database();
+
+  let allAccessUsers = {};
+  let initialDataLoaded = false;
+  let currentActiveTab = 'requests';
+
+  // ID String Generator
+  function genAccessId() { 
+    const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; 
+    let id = 'CCMC-'; 
+    for (let i = 0; i < 4; i++) id += c[Math.floor(Math.random() * c.length)]; 
+    return id; 
+  }
+
+  // System Tab switcher runtime logic
+  function switchMainTab(targetTab) {
+    currentActiveTab = targetTab;
+    document.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    
+    document.getElementById('panel-' + targetTab).classList.add('active');
+    if(targetTab === 'requests') {
+      document.getElementById('tabBtnRequests').classList.add('active');
+      document.getElementById('mass-action-area').style.display = 'block';
+      renderRequests();
+    } else {
+      document.getElementById('tabBtnIdManager').classList.add('active');
+      document.getElementById('mass-action-area').style.display = 'none';
+      renderIdTable();
+    }
+  }
+
+  // Realtime Node Sync Event Handler
+  cdb.ref('user_access').on('value', snap => {
+    allAccessUsers = {};
+    snap.forEach(child => { allAccessUsers[child.key] = child.val(); });
+    
+    // Updates appropriate sub-panel live
+    renderRequests();
+    renderIdTable();
+
+    // Kill loading page when background records synchronization completes 
+    if (!initialDataLoaded) {
+      initialDataLoaded = true;
+      document.getElementById('master-loader').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+    }
+  });
+
+  // Renderer: Access Requests Sub-System
+  function renderRequests() {
+    const cont = document.getElementById('reqList');
+    if (!cont) return;
+    const sv = (document.getElementById('reqSearch').value || '').toLowerCase().trim();
+    
+    let pending = Object.entries(allAccessUsers).filter(([k, v]) => v.status === 'pending');
+    if (sv) pending = pending.filter(([k, v]) => (v.name || k).toLowerCase().includes(sv));
+    
+    if (pending.length === 0) {
+      cont.innerHTML = `<div class="u-empty"><i class="fa-solid fa-inbox"></i><p>${sv ? 'Koi results nahi mile' : 'Koi pending request nahi hai'}</p></div>`; 
+      return; 
+    }
+
+    cont.innerHTML = pending.map(([key, u]) => {
+      const autoId = genAccessId();
+      return `
+        <div class="u-rcard" id="req-${key}">
+          <div class="u-rhead">
+            <div class="u-rname">${u.name || key} <span class="u-badge ubg-g">NEW</span></div>
+            <div class="u-rtime">${u.requestedAtStr || '—'}</div>
+          </div>
+          <div class="u-rbody">
+            <div style="font-size:11px;color:rgba(212,238,240,.30);font-weight:600;margin-bottom:10px">
+              <i class="fa-solid fa-key" style="color:var(--p2);margin-right:6px"></i>Access ID assign karein
+            </div>
+            <div class="u-rid-row">
+              <input type="text" id="rid-${key}" class="u-rid-inp" placeholder="CCMC-XXXX" value="${autoId}">
+              <button class="u-btn u-btn-p" onclick="document.getElementById('rid-${key}').value=genAccessId()"><i class="fa-solid fa-rotate"></i> New</button>
+            </div>
+            <div class="u-ract-row">
+              <button class="u-ap-btn" onclick="approveRequest('${key}')"><i class="fa-solid fa-check"></i> Approve &amp; Grant Access</button>
+              <button class="u-rj-btn" onclick="rejectRequest('${key}')"><i class="fa-solid fa-xmark"></i> Reject</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // Renderer: Identity Management Engine (All statuses tracker table)
+  function renderIdTable() {
+    const tbody = document.getElementById('idTableBody');
+    if (!tbody) return;
+    const search = (document.getElementById('idSearch').value || '').toLowerCase().trim();
+    
+    const filtered = Object.entries(allAccessUsers).filter(([k, v]) =>
+      !search || (v.name || '').toLowerCase().includes(search) || (v.accessId || '').toLowerCase().includes(search)
+    );
+
+    if (!filtered.length) {
+      tbody.innerHTML = '<div class="u-empty"><i class="fa-solid fa-id-card"></i><p>Koi user records nahi mile</p></div>';
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(([key, u]) => {
+      const isApproved = u.status === 'approved', isFrozen = u.status === 'frozen', isBlocked = u.status === 'blocked';
+      const sbCls = isApproved ? 'ubg-g' : (isFrozen ? 'ubg-y' : (isBlocked ? 'ubg-r' : 'ubg-p'));
+      const sbLabel = (u.status || 'PENDING').toUpperCase();
+      
+      const freezeBtn = isFrozen
+        ? `<button class="u-tbtn u-tbtn-unblock" onclick="updateStatus('${key}','approved')"><i class="fa-solid fa-sun"></i> Unfreeze</button>`
+        : `<button class="u-tbtn" onclick="updateStatus('${key}','frozen')"><i class="fa-solid fa-snowflake"></i> Freeze</button>`;
+      
+      const blockBtn = isBlocked
+        ? `<button class="u-tbtn u-tbtn-unblock" onclick="updateStatus('${key}','approved')"><i class="fa-solid fa-lock-open"></i> Unblock</button>`
+        : `<button class="u-tbtn" onclick="updateStatus('${key}','blocked')"><i class="fa-solid fa-lock"></i> Block</button>`;
+
+      return `
+        <div class="u-trow">
+          <div class="u-tc-name">${u.name || key}</div>
+          <div class="u-tc-acts">
+            ${freezeBtn}
+            ${blockBtn}
+            <button class="u-tbtn u-tbtn-del" onclick="deleteUser('${key}')"><i class="fa-solid fa-trash"></i></button>
+          </div>
+          <div class="u-tc-meta">
+            ${u.accessId ? `<span class="u-tid">${u.accessId}</span>` : ''}
+            <span class="u-badge ${sbCls}">${sbLabel}</span>
+            <span class="u-tdate">${u.requestedAtStr || ''}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // Core Mutation Set 1: Individual Database Processor Rules
+  function approveRequest(key) { 
+    const inp = document.getElementById('rid-' + key); 
+    const accessId = (inp ? inp.value.trim() : '') || genAccessId(); 
+    cdb.ref('user_access/' + key).update({ 
+      status: 'approved', 
+      accessId, 
+      approvedAt: Date.now(), 
+      approvedAtStr: new Date().toLocaleString() 
+    }); 
+  }
+
+  function rejectRequest(key) { 
+    if (!confirm('Kya aap is request ko reject karna chahte hain? User block list me chala jayega.')) return; 
+    cdb.ref('user_access/' + key).update({ 
+      status: 'blocked', 
+      rejectedAt: Date.now(), 
+      rejectedAtStr: new Date().toLocaleString() 
+    }); 
+  }
+
+  // Core Mutation Set 2: Identity State Changers 
+  function updateStatus(key, targetStatus) {
+    cdb.ref('user_access/' + key).update({ status: targetStatus });
+  }
+
+  function deleteUser(key) {
+    if (!confirm('Kya aap is student account ko completely database se delete karna chahte hain?')) return;
+    cdb.ref('user_access/' + key).remove();
+  }
+
+  // Core Mutation Set 3: Batch Execution Processor
+  function approveAll() {
+    if (!confirm('Sabhi pending requests ko ek sath approve karein?')) return;
+    const pending = Object.entries(allAccessUsers).filter(([k, v]) => v.status === 'pending');
+    const updates = {};
+    
+    pending.forEach(([key]) => { 
+      const accessId = genAccessId(); 
+      updates[`user_access/${key}/status`] = 'approved'; 
+      updates[`user_access/${key}/accessId`] = accessId; 
+      updates[`user_access/${key}/approvedAt`] = Date.now(); 
+      updates[`user_access/${key}/approvedAtStr`] = new Date().toLocaleString(); 
+    });
+    
+    cdb.ref().update(updates);
+  }
+</script>
+</body>
+</html>
