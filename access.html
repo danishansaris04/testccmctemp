@@ -210,6 +210,9 @@
     }
     .u-btn-p { background: var(--ta); color: var(--t0); border: 1px solid var(--bd2); }
     .u-btn-g { background: linear-gradient(135deg, var(--sg), #009e50); color: #001a0a; }
+    .u-btn-r { background: linear-gradient(135deg, var(--sr), #aa1a38); color: #fff; }
+    .u-btn-block { width: 100%; justify-content: center; }
+    
     .u-tbtn { padding: 6px 10px; border-radius: var(--r1); border: 1px solid var(--bd1); background: var(--b2); cursor: pointer; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; color: var(--tx3); transition: all 0.2s; }
     .u-tbtn:hover { background: var(--b3); border-color: var(--bd2); color: var(--tx1); }
     .u-tbtn-edit { color: var(--t0); border-color: var(--bd2); background: var(--ta); }
@@ -232,6 +235,20 @@
     .u-empty { text-align: center; padding: 60px 20px; color: var(--tx4); }
     .u-empty i { font-size: 30px; opacity: .15; display: block; margin-bottom: 12px; }
     .u-empty p { font-size: 13px; font-weight: 500; }
+
+    /* SERVER CONTROL EXTRA PANELS */
+    .u-flix-status { padding: 14px; border-radius: var(--r1); text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 14px; border: 1px solid var(--bd1); letter-spacing: .05em; text-transform: uppercase; }
+    .u-flix-status.live    { background: var(--sga); border-color: rgba(0,232,122,.3); color: var(--sg); }
+    .u-flix-status.down    { background: var(--sra); border-color: rgba(255,58,92,.3); color: var(--sr); }
+    .u-flix-status.syncing { background: var(--saa); border-color: rgba(255,176,32,.3); color: var(--sy); }
+    .u-flix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    
+    .u-site-btn { padding: 12px; border-radius: var(--r1); text-align: center; cursor: pointer; background: var(--b2); border: 1px solid var(--bd1); color: var(--tx3); font-size: 12px; font-weight: bold; transition: all .25s; letter-spacing: .05em; text-transform: uppercase; }
+    .u-site-btn.active { border-color: var(--bd3); color: var(--t0); background: var(--ta); }
+    .u-sb-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--tx4); display: inline-block; margin-right: 7px; transition: all .3s; }
+    .u-site-btn.active .u-sb-dot { background: var(--sg); box-shadow: 0 0 8px var(--sg); }
+    .panel-title { font-size: 12px; font-weight: bold; color: var(--tx1); text-transform: uppercase; margin-bottom: 10px; letter-spacing: .05em; display: flex; align-items: center; gap: 6px; }
+    .panel-title i { color: var(--t0); }
   </style>
 </head>
 <body>
@@ -260,6 +277,9 @@
     <button class="nav-btn" id="tabBtnIdManager" onclick="switchMainTab('idmanager')">
       <i class="fa-solid fa-id-card"></i><span>ID Manager</span>
     </button>
+    <button class="nav-btn" id="tabBtnFlix" onclick="switchMainTab('flix')">
+      <i class="fa-solid fa-server"></i><span>Server Control</span>
+    </button>
   </nav>
 
   <div id="panel-requests" class="sub-panel active">
@@ -278,12 +298,31 @@
     <div id="idTableBody"></div>
   </div>
 
+  <div id="panel-flix" class="sub-panel">
+    <div class="u-flix-status syncing" id="flixStatus"><i class="fa-solid fa-circle-notch fa-spin"></i> &nbsp;SYNCING...</div>
+    
+    <div class="header-panel" style="flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px;">
+      <div class="panel-title"><i class="fa-solid fa-power-off"></i> Server Power</div>
+      <div class="u-flix-grid" style="width: 100%; margin-bottom: 0;">
+        </div>
+    </div>
+
+    <div class="header-panel" style="flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px;">
+      <div class="panel-title"><i class="fa-solid fa-network-wired"></i> Active Site Routing</div>
+      <div class="u-flix-grid" style="width: 100%; margin-bottom: 0;">
+        <div class="u-site-btn" id="siteBtn1" onclick="setFlixSite('1')"><span class="u-sb-dot"></span>SITE 1</div>
+        <div class="u-site-btn" id="siteBtn2" onclick="setFlixSite('2')"><span class="u-sb-dot"></span>SITE 2</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <script>
+  // CCMC DB Config
   const ccmcConfig = {
     apiKey: "AIzaSyDPOtXmvVmk00FDUB0khBldybTJItrjXkE",
     authDomain: "ccmc-personal.firebaseapp.com",
@@ -294,8 +333,22 @@
     appId: "1:1013480839170:web:d81d8b0403347b9d3bef1b"
   };
 
+  // FLIX DB Config
+  const flixConfig = {
+    apiKey: "AIzaSyDUgUTVv07lz6AmFUe-oPvSRN7AxrZOcY0",
+    authDomain: "ccmcserver-4d9b7.firebaseapp.com",
+    databaseURL: "https://ccmcserver-4d9b7-default-rtdb.firebaseio.com",
+    projectId: "ccmcserver-4d9b7",
+    storageBucket: "ccmcserver-4d9b7.firebasestorage.app",
+    messagingSenderId: "299281705229",
+    appId: "1:299281705229:web:ac5b9975b42ef749fde844"
+  };
+
   const cApp = firebase.initializeApp(ccmcConfig, "CCMC");
+  const fApp = firebase.initializeApp(flixConfig, "FLIX");
+  
   const cdb  = cApp.database();
+  const fdb  = fApp.database();
 
   let allAccessUsers = {};
   let initialDataLoaded = false;
@@ -313,36 +366,55 @@
   function switchMainTab(targetTab) {
     currentActiveTab = targetTab;
     document.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.nav-tabs .nav-btn').forEach(b => b.classList.remove('active'));
     
     document.getElementById('panel-' + targetTab).classList.add('active');
+    document.getElementById('tabBtn' + targetTab.charAt(0).toUpperCase() + targetTab.slice(1)).classList.add('active');
+
     if(targetTab === 'requests') {
-      document.getElementById('tabBtnRequests').classList.add('active');
       document.getElementById('mass-action-area').style.display = 'block';
       renderRequests();
     } else {
-      document.getElementById('tabBtnIdManager').classList.add('active');
       document.getElementById('mass-action-area').style.display = 'none';
-      renderIdTable();
+      if(targetTab === 'idmanager') renderIdTable();
     }
   }
 
-  // Realtime Node Sync Event Handler
+  // Realtime Node Sync: CCMC DB
   cdb.ref('user_access').on('value', snap => {
     allAccessUsers = {};
     snap.forEach(child => { allAccessUsers[child.key] = child.val(); });
     
-    // Updates appropriate sub-panel live
     renderRequests();
     renderIdTable();
 
-    // Kill loading page when background records synchronization completes 
     if (!initialDataLoaded) {
       initialDataLoaded = true;
       document.getElementById('master-loader').style.display = 'none';
       document.getElementById('main-content').style.display = 'block';
     }
   });
+
+  // Realtime Node Sync: FLIX DB (From Site 2)
+  fdb.ref('server_settings').on('value', snap => {
+    const d = snap.val() || {}, st = document.getElementById('flixStatus');
+    if (!st) return;
+    
+    if (d.isDown) { 
+      st.className = 'u-flix-status down'; 
+      st.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> &nbsp;SERVER IS DOWN'; 
+    } else { 
+      st.className = 'u-flix-status live'; 
+      st.innerHTML = '<i class="fa-solid fa-circle-dot"></i> &nbsp;SERVER IS LIVE'; 
+    }
+    
+    const s1 = document.getElementById('siteBtn1'), s2 = document.getElementById('siteBtn2');
+    if (s1) s1.classList.toggle('active', d.active_site === '1');
+    if (s2) s2.classList.toggle('active', d.active_site === '2');
+  });
+
+  function setFlixPower(s) { fdb.ref('server_settings').update({ isDown: s }); }
+  function setFlixSite(n) { fdb.ref('server_settings').update({ active_site: n }); }
 
   // Renderer: Access Requests Sub-System
   function renderRequests() {
@@ -383,7 +455,7 @@
     }).join('');
   }
 
-  // Renderer: Identity Management Engine (All statuses tracker table)
+  // Renderer: Identity Management Engine
   function renderIdTable() {
     const tbody = document.getElementById('idTableBody');
     if (!tbody) return;
