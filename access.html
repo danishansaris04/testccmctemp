@@ -3,8 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-  <title>CCMC Access & ID Control Panel</title>
+  <title>CCMC Master Admin Hub</title>
+  
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   
   <style>
     :root {
@@ -14,22 +19,30 @@
       --b3: #0d2535;
       --t0: #00d4cc;
       --t1: #00a8a2;
+      --t2: #007b77;
       --ta: rgba(0,212,204,.10);
       --ta2: rgba(0,212,204,.18);
       --p2: #a78bfa;
       --sg: #00e87a;
       --sr: #ff3a5c;
+      --sc: #00d4cc;
       --sy: #ffb020;
       --sga: rgba(0,232,122,.10);
       --sra: rgba(255,58,92,.10);
       --saa: rgba(255,176,32,.10);
       --tx1: #d4eef0;
+      --tx2: rgba(212,238,240,.60);
       --tx3: rgba(212,238,240,.30);
       --tx4: rgba(212,238,240,.14);
       --bd1: rgba(0,212,204,.18);
       --bd2: rgba(0,212,204,.30);
       --bd3: rgba(0,212,204,.50);
+      --gt: 0 0 20px rgba(0,212,204,.40), 0 0 60px rgba(0,212,204,.14);
+      --gs: 0 0 16px rgba(0,232,122,.45);
+      --gr: 0 0 16px rgba(255,58,92,.35);
       --r1: 4px;
+      --sw-h: 58px;
+      --nav-h: 68px;
     }
 
     *, *::before, *::after { 
@@ -40,15 +53,16 @@
     }
     
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'IBM Plex Mono', monospace;
       background: var(--b0);
       color: var(--tx1);
       min-height: 100vh;
-      padding: 20px;
-      background-image: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(0,30,46,.8) 0%, transparent 70%);
+      background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,212,204,.01) 2px, rgba(0,212,204,.01) 4px),
+                        radial-gradient(ellipse 60% 60% at 50% 50%, rgba(0,30,46,.8) 0%, transparent 70%);
+      background-attachment: fixed;
+      overflow-x: hidden;
     }
 
-    /* Fullscreen Master Loader Shield */
     #master-loader {
       position: fixed;
       inset: 0;
@@ -60,132 +74,186 @@
       justify-content: center;
       gap: 16px;
     }
-    #master-loader p {
-      color: var(--t0);
-      font-size: 14px;
-      letter-spacing: 1px;
-    }
+    #master-loader p { color: var(--t0); font-size: 14px; letter-spacing: 1px; }
 
-    /* Main UI Container */
     .container {
-      max-width: 600px;
+      max-width: 650px;
       margin: 0 auto;
+      padding: 16px;
       display: none;
+      padding-bottom: calc(var(--nav-h) + 40px);
     }
 
+    /* ═══════════ SECTION SWITCHER ═══════════ */
+    .sec-switcher {
+      position: sticky; top: 0; z-index: 600;
+      height: var(--sw-h);
+      background: rgba(1,10,14,.94);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--bd1);
+      display: flex; align-items: center; padding: 0 18px;
+      box-shadow: 0 2px 0 rgba(0,212,204,.08), 0 8px 32px rgba(0,0,0,.6);
+    }
+    .sec-sw-inner {
+      display: flex; background: var(--b2); border: 1px solid var(--bd1);
+      border-radius: var(--r1); padding: 3px; gap: 3px;
+      max-width: 380px; width: 100%; margin: 0 auto; position: relative;
+    }
+    .sec-btn {
+      flex: 1; padding: 8px 14px; border: none; border-radius: 2px;
+      font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; cursor: pointer; background: transparent; color: var(--tx3);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: color .25s; position: relative; z-index: 2;
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+    .sec-btn.active { color: var(--b0); font-weight: 800; }
+    .sec-slider {
+      position: absolute; top: 3px; bottom: 3px; left: 3px;
+      width: calc(50% - 3px); background: linear-gradient(135deg, var(--t0), var(--t1));
+      border-radius: 1px; transition: transform .32s cubic-bezier(.34,1.2,.64,1); box-shadow: var(--gt);
+    }
+    .sec-slider.right { transform: translateX(100%); }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* Structural Framework Panels */
     .header-panel {
-      background: var(--b1);
-      border: 1px solid var(--bd2);
-      padding: 20px;
-      border-radius: var(--r1);
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      background: var(--b1); border: 1px solid var(--bd2); padding: 18px;
+      border-radius: var(--r1); margin-top: 10px; margin-bottom: 14px;
+      display: flex; align-items: center; justify-content: space-between;
     }
-
-    .brand h1 {
-      font-size: 20px;
-      font-weight: 600;
-    }
+    .brand h1 { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; }
     .brand h1 span { color: var(--t0); }
-    .brand p { font-size: 11px; color: var(--tx3); margin-top: 2px; }
+    .brand p { font-size: 10px; color: var(--tx3); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
 
-    /* Nav Tabs Section */
+    /* Top Navigation Tabs */
     .nav-tabs {
-      display: flex;
-      background: var(--b1);
-      border: 1px solid var(--bd1);
-      padding: 4px;
-      border-radius: var(--r1);
-      gap: 4px;
-      margin-bottom: 14px;
+      display: flex; background: var(--b1); border: 1px solid var(--bd1);
+      padding: 4px; border-radius: var(--r1); gap: 4px; margin-bottom: 14px;
     }
     .nav-btn {
-      flex: 1;
-      padding: 10px;
-      background: transparent;
-      border: none;
-      color: var(--tx3);
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      border-radius: 2px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s;
+      flex: 1; padding: 10px; background: transparent; border: 1px solid transparent; color: var(--tx3);
+      font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 2px;
+      display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;
     }
-    .nav-btn.active {
-      background: var(--ta);
-      color: var(--t0);
+    .nav-btn.active { 
+      background: var(--ta); 
+      color: var(--t0); 
       border: 1px solid var(--bd2);
+      box-shadow: inset 0 0 8px rgba(0,212,204,.15);
     }
 
-    /* Sub-panels switcher logic */
-    .sub-panel { display: none; }
-    .sub-panel.active { display: block; }
-
-    .search-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--b2);
-      border: 1px solid var(--bd1);
-      border-radius: var(--r1);
-      padding: 11px 14px;
-      margin-bottom: 14px;
+    /* Sub Tabs Router */
+    .sub-tabs-router { display: flex; gap: 6px; margin-bottom: 14px; }
+    .sub-router-btn {
+      flex: 1; padding: 10px; background: var(--b2); border: 1px solid var(--bd1);
+      color: var(--tx3); cursor: pointer; font-size: 10px; font-weight: bold;
+      border-radius: var(--r1); text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s;
     }
-    .search-container i { color: var(--tx4); font-size: 13px; }
-    .search-container input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: var(--tx1);
-      font-family: inherit;
-      font-size: 14px;
-      outline: none;
+    .sub-router-btn.active { 
+      background: var(--ta2); 
+      border-color: var(--t0); 
+      color: var(--t0);
+      box-shadow: 0 0 10px rgba(0,212,204,.2);
     }
 
-    /* Request Cards */
-    .u-rcard {
-      background: var(--b1);
-      border: 1px solid var(--bd1);
-      border-radius: var(--r1);
-      margin-bottom: 12px;
-      position: relative;
-      overflow: hidden;
+    .sub-panel, .c-page-view { display: none; }
+    .sub-panel.active, .c-page-view.active { display: block; }
+
+    .c-card, .u-card, .u-rcard, .c-hero-card {
+      background: var(--b1); border: 1px solid var(--bd1); border-radius: var(--r1);
+      padding: 18px; margin-bottom: 14px; position: relative; overflow: hidden; transition: border-color .2s;
     }
-    .u-rcard::before {
+    .c-card::before, .u-card::before, .u-rcard::before {
       content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, var(--t0), transparent 60%); opacity: .4;
+      background: linear-gradient(90deg, var(--t0), transparent 55%); opacity: .4;
     }
-    .u-rhead { padding: 12px 14px 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-    .u-rname { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-    .u-rtime { font-size: 11px; color: var(--tx4); white-space: nowrap; }
-    .u-rbody { padding: 4px 14px 14px; }
-    .u-rid-row { display: flex; gap: 7px; margin-bottom: 10px; }
+    .u-rcard.site1-card::before { background: linear-gradient(90deg, var(--p2), transparent 60%); }
     
-    .u-rid-inp {
-      flex: 1; padding: 10px 12px; background: var(--b2); border: 1px solid var(--bd1);
-      border-radius: var(--r1); color: var(--t0); font-family: monospace;
-      font-size: 14px; font-weight: bold; outline: none; letter-spacing: .05em;
+    .c-card-head, .panel-title {
+      font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; margin-bottom: 14px; color: var(--tx1);
+      letter-spacing: .08em; text-transform: uppercase; display: flex; align-items: center; gap: 9px;
     }
+    .c-card-head i, .panel-title i { color: var(--t0); }
 
-    /* ID Table Management Elements */
+    .c-inp, .u-inp {
+      width: 100%; padding: 12px 14px; margin-bottom: 10px; background: var(--b2);
+      border: 1px solid var(--bd1); border-radius: var(--r1); color: var(--tx1);
+      font-family: inherit; font-size: 13px; outline: none; transition: border-color .2s;
+    }
+    .c-inp:focus, .u-inp:focus { border-color: var(--bd3); box-shadow: 0 0 8px rgba(0,212,204,.15); }
+    textarea.c-inp { resize: vertical; }
+
+    .c-upload-row, .u-flix-grid, .u-rid-row, .u-ract-row { display: flex; gap: 7px; margin-bottom: 10px; }
+    .c-ubtn, .u-btn {
+      flex: 1; padding: 11px 14px; border: none; border-radius: var(--r1);
+      font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex;
+      align-items: center; justify-content: center; gap: 6px; transition: all .2s; white-space: nowrap;
+    }
+    .c-ubtn-g { background: linear-gradient(135deg, var(--sg), #009e50); color: #001a0a; }
+    .c-ubtn-p { background: linear-gradient(135deg, var(--t0), var(--t1)); color: var(--b0); }
+    .c-ubtn-d { background: var(--b2); color: var(--tx2); border: 1px solid var(--bd1); }
+    
+    .c-btn-main, .u-btn-block {
+      width: 100%; padding: 14px; background: var(--b2); border: 1px solid var(--bd1);
+      color: var(--tx3); border-radius: var(--r1); font-family: 'Syne', sans-serif; font-weight: 700; cursor: pointer;
+      margin-top: 10px; text-transform: uppercase; letter-spacing: .06em; display: block; text-align: center; transition: all 0.25s;
+    }
+    .u-btn-block { padding: 13px 14px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; }
+    
+    /* ═══════════ SERVER ROUTING ACTIVE CORE FIXED ═══════════ */
+    .u-btn-active-route {
+      background: linear-gradient(135deg, var(--sg), #009e50) !important;
+      color: #001a0a !important;
+      border: none !important;
+      box-shadow: var(--gs) !important;
+      font-weight: 800 !important;
+    }
+    .u-btn-inactive-route {
+      background: var(--b2) !important;
+      border: 1px solid var(--bd1) !important;
+      color: var(--tx3) !important;
+      box-shadow: none !important;
+    }
+    .u-sb-dot { 
+      width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 8px; 
+      transition: background 0.3s, box-shadow 0.3s;
+    }
+    .u-btn-active-route .u-sb-dot { background: #001a0a; box-shadow: none; }
+    .u-btn-inactive-route .u-sb-dot { background: var(--tx4); }
+
+    .c-btn-cancel {
+      width: 100%; padding: 11px; margin-top: 6px; background: var(--b2); color: var(--tx3);
+      border: 1px solid var(--bd1); border-radius: var(--r1); cursor: pointer; font-size: 13px;
+    }
+    .c-btn-notify { background: linear-gradient(135deg, var(--sy), var(--a1)); color: var(--b0); }
+
+    .u-ap-btn { background: linear-gradient(135deg, var(--sg), #009e50); color: #001a0a; font-weight: bold; flex: 2; }
+    .u-rj-btn { background: var(--sra); border: 1px solid rgba(255,58,92,.3); color: var(--sr); font-weight: bold; }
+    .u-gen-btn { background: var(--b2); border: 1px solid var(--bd1); color: var(--tx3); padding: 11px 12px; border-radius: var(--r1); cursor: pointer; }
+
+    .c-img-prev {
+      width: 100%; height: 155px; background: var(--b2); border: 1px dashed var(--bd1);
+      border-radius: var(--r1); margin: 8px 0; display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .c-img-prev img { max-height: 100%; max-width: 100%; object-fit: contain; }
+    .c-img-prev span { color: var(--tx4); font-size: 12px; }
+
+    .c-opt-row { display: grid; grid-template-columns: 1fr 46px; gap: 7px; align-items: center; margin-bottom: 6px; }
+    .c-opt-row .c-inp { margin: 0; }
+    .c-radio-wrap {
+      width: 46px; height: 46px; background: var(--b2); border: 1px solid var(--bd1);
+      border-radius: var(--r1); display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .c-radio-wrap:has(input:checked) { background: var(--sga); border-color: var(--sg); box-shadow: 0 0 12px rgba(0,232,122,.25); }
+    .c-radio-wrap input[type="radio"] { width: 16px; height: 16px; accent-color: var(--sg); cursor: pointer; }
+
+    /* Dynamic Pipeline Lists */
     .u-trow {
-      background: var(--b1);
-      border: 1px solid var(--bd1);
-      border-radius: var(--r1);
-      padding: 12px 14px;
-      margin-bottom: 8px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      grid-template-rows: auto auto;
-      gap: 6px 12px;
-      align-items: center;
+      background: var(--b1); border: 1px solid var(--bd1); border-radius: var(--r1);
+      padding: 12px 14px; margin-bottom: 8px; display: grid; grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto; gap: 6px 12px; align-items: center; transition: opacity 0.15s ease;
     }
     .u-tc-name { grid-column: 1; font-size: 14px; font-weight: 600; }
     .u-tc-acts { grid-column: 2; grid-row: 1 / 3; display: flex; align-items: center; gap: 6px; }
@@ -193,163 +261,338 @@
     
     .u-tid { font-family: monospace; font-size: 11px; font-weight: bold; color: var(--t0); background: var(--ta); border: 1px solid var(--bd2); padding: 2px 6px; border-radius: 2px; }
     .u-tdate { font-size: 11px; color: var(--tx4); }
+    .u-tbtn { padding: 6px 10px; border-radius: var(--r1); border: 1px solid var(--bd1); background: var(--b2); cursor: pointer; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; color: var(--tx3); }
+    .u-tbtn-unblock { color: var(--sg); border-color: rgba(0,232,122,.25); background: var(--sga); }
+    .u-tbtn-del { color: var(--sr); border-color: rgba(255,58,92,.25); background: var(--sra); }
 
-    /* Badges Status styling */
     .u-badge { padding: 2px 7px; border-radius: 2px; font-size: 10px; font-weight: 600; border: 1px solid; }
     .ubg-g { border-color: rgba(0,232,122,.3); color: var(--sg); background: var(--sga); }
     .ubg-r { border-color: rgba(255,58,92,.3); color: var(--sr); background: var(--sra); }
     .ubg-y { border-color: rgba(255,176,32,.3); color: var(--sy); background: var(--saa); }
     .ubg-p { border-color: var(--bd2); color: var(--t0); background: var(--ta); }
+    .ubg-c { border-color: var(--bd2); color: var(--p2); background: rgba(167,139,250,0.1); }
 
-    /* Buttons Config */
-    .u-btn {
-      padding: 10px 14px; border-radius: var(--r1); border: none; cursor: pointer;
-      font-weight: 600; font-size: 12px; font-family: inherit;
-      display: inline-flex; align-items: center; gap: 6px;
-      white-space: nowrap; transition: all .2s;
+    .c-chap-item { background: var(--b2); border: 1px solid var(--bd1); border-radius: var(--r1); padding: 14px 15px; margin-bottom: 9px; position: relative; }
+    .c-chap-item.hid { opacity: .5; border-style: dashed; }
+    .c-chap-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .c-chap-info { cursor: pointer; flex: 1; }
+    .c-chap-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; }
+    .c-chap-meta { font-size: 11px; color: var(--tx3); margin-top: 4px; }
+    .c-chap-acts { display: flex; gap: 14px; align-items: center; }
+    .c-chap-acts i { cursor: pointer; font-size: 14px; transition: transform 0.2s; }
+    .c-chap-acts i:active { transform: scale(0.85); }
+    .c-ie { color: var(--sc); } .c-iv { color: var(--sg); } .c-id { color: var(--sr); }
+    .c-timer-row { display: flex; align-items: center; gap: 8px; background: var(--b1); padding: 7px 11px; border-radius: var(--r1); margin-top: 5px; }
+    .c-t-inp { width: 65px; padding: 6px; text-align: center; background: var(--b2); border: 1px solid var(--bd1); color: #fff; border-radius: 2px; }
+    .c-t-btn { background: linear-gradient(135deg, var(--t0), var(--t1)); color: var(--b0); padding: 6px 12px; border: none; cursor: pointer; font-weight: bold; border-radius: 2px; }
+
+    .search-container, .c-search { display: flex; align-items: center; gap: 10px; background: var(--b2); border: 1px solid var(--bd1); border-radius: var(--r1); padding: 11px 14px; margin-bottom: 14px; }
+    .search-container input, .c-search input { flex: 1; background: transparent; border: none; color: #fff; outline: none; }
+
+    /* Credits Styles Layout */
+    .c-hero-card { text-align: center; padding: 24px 16px; }
+    .c-hero-logo { font-size: 32px; margin-bottom: 10px; }
+    .c-hero-name { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; }
+    .c-hero-name span { color: var(--t0); }
+    .c-hero-ver { font-size: 10px; color: var(--tx3); margin-top: 4px; letter-spacing: 0.15em; }
+    .c-hero-tag { font-size: 12px; color: var(--tx2); margin-top: 10px; line-height: 1.5; }
+    .c-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+    .c-stat { background: var(--ta); border: 1px solid var(--bd1); padding: 12px 6px; text-align: center; border-radius: var(--r1); }
+    .c-stat-n { font-size: 18px; font-weight: bold; color: var(--t0); }
+    .c-stat-l { font-size: 9px; color: var(--tx3); text-transform: uppercase; margin-top: 2px; }
+    .c-person { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--bd1); }
+    .c-person:last-child { border-bottom: none; }
+    .c-av { width: 38px; height: 38px; background: var(--ta2); border: 1px solid var(--bd2); display: flex; align-items: center; justify-content: center; border-radius: var(--r1); }
+    .c-pname { font-size: 13px; font-weight: 600; }
+    .c-prole { font-size: 11px; color: var(--tx3); margin-top: 1px; }
+
+    /* Unified Master Footer Bottom Nav Layout */
+    .master-bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
+      background: rgba(1,10,14,.97); backdrop-filter: blur(20px); border-top: 1px solid var(--bd1);
+      padding: 8px 0 calc(4px + env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(4, 1fr);
+      box-shadow: 0 -4px 24px rgba(0,0,0,.6);
     }
-    .u-btn-p { background: var(--ta); color: var(--t0); border: 1px solid var(--bd2); }
-    .u-btn-g { background: linear-gradient(135deg, var(--sg), #009e50); color: #001a0a; }
-    .u-btn-r { background: linear-gradient(135deg, var(--sr), #aa1a38); color: #fff; }
-    .u-btn-block { width: 100%; justify-content: center; }
+    .m-bn {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 4px; border: none; background: transparent; font-size: 10px; font-weight: 700;
+      color: var(--tx4); cursor: pointer; text-transform: uppercase; font-family: 'Syne', sans-serif;
+      transition: color 0.2s, filter 0.2s;
+    }
+    .m-bn i { font-size: 16px; transition: transform 0.2s; }
+    .m-bn.active { 
+      color: var(--t0); 
+      filter: drop-shadow(0 0 6px var(--t0)); 
+    }
+    .m-bn.active i { transform: translateY(-1px); }
+
+    .c-q-item { display: flex; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--bd1); gap: 11px; }
+    .c-q-item:last-child { border-bottom: none; }
+    .c-q-thumb { width: 44px; height: 44px; border-radius: var(--r1); object-fit: cover; border: 1px solid var(--bd1); }
+    .c-q-no-img { width: 44px; height: 44px; background: var(--b2); border: 1px dashed var(--bd1); display: flex; align-items: center; justify-content: center; color: var(--tx4); font-size: 14px; border-radius: var(--r1); }
+    .c-q-txt { font-size: 13px; line-height: 1.4; flex: 1; }
+    .c-q-meta { font-size: 11px; color: var(--sg); margin-top: 4px; font-weight: bold; }
+    .c-q-acts { display: flex; gap: 12px; }
+    .c-q-acts i { cursor: pointer; font-size: 14px; transition: transform 0.15s; }
+    .c-q-acts i:active { transform: scale(0.8); }
+
+    /* Modal Layout Elements */
+    .c-modal { display: none; position: fixed; z-index: 1000; inset: 0; background: rgba(0,0,0,.82); backdrop-filter: blur(12px); align-items: flex-end; justify-content: center; }
+    .c-modal.show { display: flex; }
+    .c-modal-sheet { background: var(--b1); border: 1px solid var(--bd2); border-bottom: none; width: 100%; max-width: 600px; padding: 20px; max-height: 85vh; overflow-y: auto; border-top-left-radius: var(--r2); border-top-right-radius: var(--r2); }
+    .c-modal-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid var(--bd1); padding-bottom: 10px; }
+    .c-close-x { background: var(--b2); border: 1px solid var(--bd1); color: var(--tx1); width: 32px; height: 32px; cursor: pointer; border-radius: var(--r1); display: flex; align-items: center; justify-content: center; }
+    .c-close-x:hover { color: var(--sr); border-color: var(--sr); }
+    .c-gal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
+    .c-gal-item { position: relative; aspect-ratio: 1; border: 1px solid var(--bd1); overflow: hidden; border-radius: var(--r1); }
+    .c-gal-item img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
+    .c-gal-del { position: absolute; top: 2px; right: 2px; background: rgba(255,58,92,.85); color: white; border: none; width: 20px; height: 20px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+
+    .c-confirm-ov { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.87); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+    .c-confirm-sheet { background: var(--b1); border: 1px solid var(--bd2); padding: 24px; text-align: center; max-width: 380px; width: 100%; border-radius: var(--r2); }
+    .c-confirm-btns { display: flex; gap: 10px; margin-top: 20px; }
+    .c-cb { flex: 1; padding: 12px; cursor: pointer; border: none; font-weight: bold; border-radius: var(--r1); font-family: inherit; }
+    .c-cb-no { background: var(--b2); color: #fff; border: 1px solid var(--bd1); }
+    .c-cb-yes { background: linear-gradient(135deg, var(--sr), #aa1a38); color: #fff; }
     
-    .u-tbtn { padding: 6px 10px; border-radius: var(--r1); border: 1px solid var(--bd1); background: var(--b2); cursor: pointer; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 4px; color: var(--tx3); transition: all 0.2s; }
-    .u-tbtn:hover { background: var(--b3); border-color: var(--bd2); color: var(--tx1); }
-    .u-tbtn-edit { color: var(--t0); border-color: var(--bd2); background: var(--ta); }
-    .u-tbtn-del { color: var(--sr); border-color: rgba(255,58,92,.25); background: var(--sra); }
-    .u-tbtn-unblock { color: var(--sg); border-color: rgba(0,232,122,.25); background: var(--sga); }
-
-    .u-ap-btn {
-      flex: 1; padding: 11px; border: none; border-radius: var(--r1);
-      background: linear-gradient(135deg, var(--sg), #009e50); color: #001a0a;
-      font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
-      display: flex; align-items: center; justify-content: center; gap: 7px;
-    }
-    .u-rj-btn {
-      padding: 11px 16px; border: 1px solid rgba(255,58,92,.3); border-radius: var(--r1);
-      background: var(--sra); color: var(--sr); font-size: 12px; font-weight: 600; 
-      cursor: pointer; font-family: inherit; display: flex;
-      align-items: center; justify-content: center; gap: 6px;
-    }
-
-    .u-empty { text-align: center; padding: 60px 20px; color: var(--tx4); }
-    .u-empty i { font-size: 30px; opacity: .15; display: block; margin-bottom: 12px; }
-    .u-empty p { font-size: 13px; font-weight: 500; }
-
-    /* SERVER CONTROL EXTRA PANELS */
-    .u-flix-status { padding: 14px; border-radius: var(--r1); text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 14px; border: 1px solid var(--bd1); letter-spacing: .05em; text-transform: uppercase; }
-    .u-flix-status.live    { background: var(--sga); border-color: rgba(0,232,122,.3); color: var(--sg); }
-    .u-flix-status.down    { background: var(--sra); border-color: rgba(255,58,92,.3); color: var(--sr); }
-    .u-flix-status.syncing { background: var(--saa); border-color: rgba(255,176,32,.3); color: var(--sy); }
-    .u-flix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-    
-    .u-site-btn { padding: 12px; border-radius: var(--r1); text-align: center; cursor: pointer; background: var(--b2); border: 1px solid var(--bd1); color: var(--tx3); font-size: 12px; font-weight: bold; transition: all .25s; letter-spacing: .05em; text-transform: uppercase; }
-    .u-site-btn.active { border-color: var(--bd3); color: var(--t0); background: var(--ta); }
-    .u-sb-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--tx4); display: inline-block; margin-right: 7px; transition: all .3s; }
-    .u-site-btn.active .u-sb-dot { background: var(--sg); box-shadow: 0 0 8px var(--sg); }
-    .panel-title { font-size: 12px; font-weight: bold; color: var(--tx1); text-transform: uppercase; margin-bottom: 10px; letter-spacing: .05em; display: flex; align-items: center; gap: 6px; }
-    .panel-title i { color: var(--t0); }
+    .u-empty { text-align: center; padding: 40px 20px; color: var(--tx4); }
   </style>
 </head>
 <body>
 
+<div class="sec-switcher" id="secSwitcher">
+  <div class="sec-sw-inner">
+    <button class="sec-btn active" id="secBtnCCMC" onclick="switchSection('ccmc')">
+      <i class="fa-solid fa-graduation-cap"></i><span>CCMC Admin</span>
+    </button>
+    <button class="sec-btn" id="secBtnUltra" onclick="switchSection('ultra')">
+      <i class="fa-solid fa-satellite-dish"></i><span>Ultra Admin</span>
+    </button>
+    <div class="sec-slider" id="secSlider"></div>
+  </div>
+</div>
+
 <div id="master-loader">
   <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--t0); font-size: 32px;"></i>
-  <p>System Syncing...</p>
+  <p>System Syncing Dual Databases...</p>
 </div>
 
 <div class="container" id="main-content">
-  
-  <div class="header-panel">
-    <div class="brand">
-      <h1>CCMC <span>Control Panel</span></h1>
-      <p>Requests &amp; Identity Core</p>
-    </div>
-    <div id="mass-action-area">
-      <button class="u-btn u-btn-g" onclick="approveAll()"><i class="fa-solid fa-check-double"></i> Approve All</button>
-    </div>
-  </div>
 
-  <nav class="nav-tabs">
-    <button class="nav-btn active" id="tabBtnRequests" onclick="switchMainTab('requests')">
-      <i class="fa-solid fa-inbox"></i><span>Access Requests</span>
-    </button>
-    <button class="nav-btn" id="tabBtnIdManager" onclick="switchMainTab('idmanager')">
-      <i class="fa-solid fa-id-card"></i><span>ID Manager</span>
-    </button>
-    <button class="nav-btn" id="tabBtnFlix" onclick="switchMainTab('flix')">
-      <i class="fa-solid fa-server"></i><span>Server Control</span>
-    </button>
-  </nav>
-
-  <div id="panel-requests" class="sub-panel active">
-    <div class="search-container">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="reqSearch" placeholder="Pending student ka naam dhundo..." oninput="renderRequests()">
-    </div>
-    <div id="reqList"></div>
-  </div>
-
-  <div id="panel-idmanager" class="sub-panel">
-    <div class="search-container">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" id="idSearch" placeholder="Student ka naam ya access ID dhundo..." oninput="renderIdTable()">
-    </div>
-    <div id="idTableBody"></div>
-  </div>
-
-  <div id="panel-flix" class="sub-panel">
-    <div class="u-flix-status syncing" id="flixStatus"><i class="fa-solid fa-circle-notch fa-spin"></i> &nbsp;SYNCING...</div>
+  <div id="section-ccmc" class="section active">
     
-    <div class="header-panel" style="flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px;">
-      <div class="panel-title"><i class="fa-solid fa-power-off"></i> Server Power</div>
-      <div class="u-flix-grid" style="width: 100%; margin-bottom: 0;">
+    <div id="c-panel-add" class="c-page-view active">
+      <div class="c-card">
+        <div class="c-card-head" id="cFormTitle"><i class="fa-solid fa-plus-circle"></i> Add New Question</div>
+        <select class="c-inp" id="chapSelect" onchange="checkNew()">
+          <option value="">-- Chapter Select Karein --</option>
+          <option value="NEW">+ Naya Chapter Banao</option>
+        </select>
+        <input type="text" class="c-inp" id="newChapName" placeholder="Naya Chapter Ka Naam" style="display:none">
+        <input type="text" class="c-inp" id="question" placeholder="Question likhein">
+        
+        <div class="c-upload-row">
+          <input type="file" id="imgbbInput" style="display:none" accept="image/*" onchange="uploadToImgBB(this)">
+          <button class="c-ubtn c-ubtn-g" onclick="document.getElementById('imgbbInput').click()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</button>
+          <button class="c-ubtn c-ubtn-p" onclick="openGallery()"><i class="fa-solid fa-images"></i> Gallery</button>
+          <button class="c-ubtn c-ubtn-d" onclick="openPostImages()"><i class="fa-solid fa-globe"></i> About</button>
         </div>
-    </div>
-
-    <div class="header-panel" style="flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px;">
-      <div class="panel-title"><i class="fa-solid fa-network-wired"></i> Active Site Routing</div>
-      <div class="u-flix-grid" style="width: 100%; margin-bottom: 0;">
-        <div class="u-site-btn" id="siteBtn1" onclick="setFlixSite('1')"><span class="u-sb-dot"></span>SITE 1</div>
-        <div class="u-site-btn" id="siteBtn2" onclick="setFlixSite('2')"><span class="u-sb-dot"></span>SITE 2</div>
+        
+        <input type="text" class="c-inp" id="imgUrl" placeholder="Image Link paste karein (.jpg .png)" oninput="handleUrlInput(this.value)">
+        <div class="c-img-prev" id="pBox"><span>No Image Preview</span></div>
+        
+        <div id="optionsParent">
+          <div class="c-opt-row"><input type="text" class="c-inp c-opt" placeholder="Option 1"><div class="c-radio-wrap"><input type="radio" name="ans" value="0"></div></div>
+          <div class="c-opt-row"><input type="text" class="c-inp c-opt" placeholder="Option 2"><div class="c-radio-wrap"><input type="radio" name="ans" value="1"></div></div>
+          <div class="c-opt-row"><input type="text" class="c-inp c-opt" placeholder="Option 3"><div class="c-radio-wrap"><input type="radio" name="ans" value="2"></div></div>
+          <div class="c-opt-row"><input type="text" class="c-inp c-opt" placeholder="Option 4"><div class="c-radio-wrap"><input type="radio" name="ans" value="3"></div></div>
+        </div>
+        <button class="c-btn-main" id="submitBtn" onclick="saveData()">Database Mein Save Karein</button>
+        <button id="cancelEditBtn" class="c-btn-cancel" style="display:none" onclick="resetCForm()">Cancel Editing</button>
       </div>
     </div>
+
+    <div id="c-panel-library" class="c-page-view">
+      <div class="c-card">
+        <div class="c-card-head"><i class="fa-solid fa-database"></i> Content Library <span class="u-tid" id="libCount">0</span></div>
+        <div class="c-search">
+          <i class="fa-solid fa-search"></i>
+          <input type="text" id="cSearch" placeholder="Chapter search karein..." onkeyup="renderChapters()">
+        </div>
+        <div id="chapterListContainer"></div>
+      </div>
+    </div>
+
+    <div id="c-panel-notify" class="c-page-view">
+      <div class="c-card">
+        <div class="c-card-head"><i class="fa-solid fa-bell"></i> Broadcast System Notification</div>
+        <textarea class="c-inp" id="notifyMsg" rows="4" placeholder="Message content yahan likhein..."></textarea>
+        <button class="c-btn-main c-btn-notify" onclick="sendNotification()"><i class="fa-solid fa-paper-plane"></i> Sabhi Students Ko Bhejein</button>
+      </div>
+    </div>
+
+    <div id="c-panel-credits" class="c-page-view">
+      <div class="c-hero-card">
+        <div class="c-hero-logo">🎓</div>
+        <div class="c-hero-name">CCMC <span>Control Hub</span></div>
+        <div class="c-hero-ver">VERSION 4.0 · ENTERPRISE SYSTEM</div>
+        <div class="c-hero-tag">A power optimized core engine to manage student identities, dynamic questionnaires and server active states.</div>
+      </div>
+      <div class="c-card">
+        <div class="c-card-head"><i class="fa-solid fa-users"></i> Core Engineering Team</div>
+        <div class="c-person">
+          <div class="c-av">👨‍💻</div>
+          <div><div class="c-pname">Mohd Danish Ansari</div><div class="c-prole">Lead Systems Architect & Full Stack Dev</div></div>
+        </div>
+        <div class="c-person">
+          <div class="c-av">🎯</div>
+          <div><div class="c-pname">Merchant Navy Support</div><div class="c-prole">Content Audit & Curriculum Validator</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="section-ultra" class="section">
+    <div class="header-panel">
+      <div class="brand">
+        <h1>Ultra <span>Control Hub</span></h1>
+        <p>Identity Matrix & Routing Core</p>
+      </div>
+      <div id="mass-action-area">
+        <button class="u-btn u-btn-g" onclick="handleApproveAll()"><i class="fa-solid fa-check-double"></i> Approve All</button>
+      </div>
+    </div>
+
+    <nav class="nav-tabs">
+      <button class="nav-btn active" id="tabBtnRequests" onclick="switchUltraTab('requests')">
+        <i class="fa-solid fa-inbox"></i><span>Requests</span>
+      </button>
+      <button class="nav-btn" id="tabBtnIdmanager" onclick="switchUltraTab('idmanager')">
+        <i class="fa-solid fa-id-card"></i><span>ID Manager</span>
+      </button>
+      <button class="nav-btn" id="tabBtnFlix" onclick="switchUltraTab('flix')">
+        <i class="fa-solid fa-server"></i><span>Routing</span>
+      </button>
+    </nav>
+
+    <div id="panel-requests" class="sub-panel active">
+      <div class="sub-tabs-router">
+        <button class="sub-router-btn active" id="reqRouterSite1" onclick="setSubTabScope('requests', 'site1')">(UPLOAD QUESTION TERMINAL)</button>
+        <button class="sub-router-btn" id="reqRouterSite2" onclick="setSubTabScope('requests', 'site2')">(ALL QUESTION)</button>
+      </div>
+      <div class="search-container">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="reqSearch" placeholder="Pending student ka naam dhundo..." oninput="renderRequests()">
+      </div>
+      <div id="reqList"></div>
+    </div>
+
+    <div id="panel-idmanager" class="sub-panel">
+      <div class="sub-tabs-router">
+        <button class="sub-router-btn active" id="idRouterSite1" onclick="setSubTabScope('idmanager', 'site1')">(UPLOAD QUESTION TERMINAL)</button>
+        <button class="sub-router-btn" id="idRouterSite2" onclick="setSubTabScope('idmanager', 'site2')">(ALL QUESTION)</button>
+      </div>
+      <div class="search-container">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="idSearch" placeholder="Student ka naam ya access ID dhundo..." oninput="renderIdTable()">
+      </div>
+      <div id="idTableBody"></div>
+    </div>
+
+    <div id="panel-flix" class="sub-panel">
+      <div class="u-flix-status syncing" id="flixStatus"><i class="fa-solid fa-circle-notch fa-spin"></i> &nbsp;SYNCING...</div>
+      
+      <div class="header-panel" style="flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px;">
+        <div class="panel-title"><i class="fa-solid fa-power-off"></i> Server Power Settings</div>
+        <div class="u-flix-grid" style="width: 100%; margin-bottom: 0;">
+              </div>
+      </div>
+
+      <div class="header-panel" style="flex-direction: column; align-items: flex-start; gap: 12px; padding: 16px;">
+        <div class="panel-title"><i class="fa-solid fa-network-wired"></i> Active Site Routing</div>
+        <div class="u-flix-grid" style="width: 100%; margin-bottom: 0; display: flex; flex-direction: column; gap: 8px;" id="routingBtnsParent">
+          <button class="u-btn u-btn-block" id="siteBtn1" onclick="setFlixSite('1')"><span class="u-sb-dot"></span>(ALL QUESTION TERMINAL)</button>
+          <button class="u-btn u-btn-block" id="siteBtn2" onclick="setFlixSite('2')"><span class="u-sb-dot"></span>(UPLOAD QUESTION TERMINAL)</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<nav class="master-bottom-nav" id="masterBottomNav">
+  <button class="m-bn active" id="mNavAdd" onclick="triggerBottomNav('add')"><i class="fa-solid fa-plus-circle"></i><span>Add Q</span></button>
+  <button class="m-bn" id="mNavLib" onclick="triggerBottomNav('library')"><i class="fa-solid fa-database"></i><span>Library</span></button>
+  <button class="m-bn" id="mNavReq" onclick="triggerBottomNav('requests')"><i class="fa-solid fa-inbox"></i><span>Requests</span></button>
+  <button class="m-bn" id="mNavId" onclick="triggerBottomNav('idmanager')"><i class="fa-solid fa-id-card"></i><span>Management</span></button>
+</nav>
+
+<div id="galleryModal" class="c-modal">
+  <div class="c-modal-sheet">
+    <div class="c-modal-hdr"><span class="panel-title">Image Gallery</span><button class="c-close-x" onclick="closeCModal('galleryModal')">X</button></div>
+    <div class="c-modal-body"><div id="galleryGrid" class="c-gal-grid"></div></div>
+  </div>
+</div>
+
+<div id="qModal" class="c-modal">
+  <div class="c-modal-sheet">
+    <div class="c-modal-hdr"><span class="panel-title" id="qTitle">Questions Matrix</span><button class="c-close-x" onclick="closeCModal('qModal')">X</button></div>
+    <div class="c-modal-body"><div id="qListContainer"></div></div>
+  </div>
+</div>
+
+<div class="c-confirm-ov" id="confirmOv">
+  <div class="c-confirm-sheet">
+    <div class="panel-title" id="confirmTitle">Sure hain?</div>
+    <div class="c-confirm-btns">
+      <button class="c-cb c-cb-no" onclick="closeConfirm()">Cancel</button>
+      <button class="c-cb c-cb-yes" id="confirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
 
 <script>
-  // CCMC DB Config
-  const ccmcConfig = {
+  // Site 1 Database Configuration (Upload Question Terminal Node)
+  const ccmcSite1Config = {
+    apiKey: "AIzaSyAX40dcdJ96TOhBgqa4bbIiOwLlUShnUI8",
+    databaseURL: "https://ccmc-90ba3-default-rtdb.firebaseio.com",
+    projectId: "ccmc-90ba3"
+  };
+
+  // Site 2 Database Configuration (All Question Terminal Node)
+  const ccmcSite2Config = {
     apiKey: "AIzaSyDPOtXmvVmk00FDUB0khBldybTJItrjXkE",
     authDomain: "ccmc-personal.firebaseapp.com",
     databaseURL: "https://ccmc-personal-default-rtdb.firebaseio.com",
-    projectId: "ccmc-personal",
-    storageBucket: "ccmc-personal.firebasestorage.app",
-    messagingSenderId: "1013480839170",
-    appId: "1:1013480839170:web:d81d8b0403347b9d3bef1b"
+    projectId: "ccmc-personal"
   };
 
-  // FLIX DB Config
+  // FLIX Distribution Routing DB Context Configuration
   const flixConfig = {
-  apiKey:"AIzaSyD7gABQ1j1zMFS9AylLCZr-K1hyK0LkIsQ",
-  databaseURL:"https://distark-default-rtdb.firebaseio.com",
-  projectId:"distark"
-};
-  const cApp = firebase.initializeApp(ccmcConfig, "CCMC");
-  const fApp = firebase.initializeApp(flixConfig, "FLIX");
+    apiKey: "AIzaSyD7gABQ1j1zMFS9AylLCZr-K1hyK0LkIsQ",
+    databaseURL: "https://distark-default-rtdb.firebaseio.com",
+    projectId: "distark"
+  };
+
+  // Initialize Isolated Instances
+  const appSite1 = firebase.initializeApp(ccmcSite1Config, "SITE1");
+  const appSite2 = firebase.initializeApp(ccmcSite2Config, "SITE2");
+  const appFlix  = firebase.initializeApp(flixConfig, "FLIX");
   
-  const cdb  = cApp.database();
-  const fdb  = fApp.database();
+  const cdbSite1 = appSite1.database();
+  const cdbSite2 = appSite2.database();
+  const fdb      = appFlix.database();
 
-  let allAccessUsers = {};
-  let initialDataLoaded = false;
-  let currentActiveTab = 'requests';
+  // Unified Architecture States Memory Object
+  let masterQuiz = {}, chapSettings = {};
+  let site1AccessUsers = {}, site2AccessUsers = {};
+  
+  let editMode = { active: false, chap: null, qId: null };
+  let currentActiveTab = 'requests', currentRequestsScope = 'site1', currentIdManagerScope = 'site1';
+  let site1Loaded = false, site2Loaded = false, delT = {};
 
-  // ID String Generator
   function genAccessId() { 
     const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; 
     let id = 'CCMC-'; 
@@ -357,14 +600,49 @@
     return id; 
   }
 
-  // System Tab switcher runtime logic
-  function switchMainTab(targetTab) {
+  /* ══════════════════════════════════
+     CONTEXT MULTI-PANEL VIEW INTERFACE ROUTER
+  ══════════════════════════════════ */
+  function switchSection(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.sec-btn').forEach(b => b.classList.remove('active'));
+    
+    document.getElementById('section-' + name).classList.add('active');
+    document.getElementById('secBtn' + (name === 'ccmc' ? 'CCMC' : 'Ultra')).classList.add('active');
+    document.getElementById('secSlider').classList.toggle('right', name === 'ultra');
+  }
+
+  function triggerBottomNav(type) {
+    document.querySelectorAll('.m-bn').forEach(b => b.classList.remove('active'));
+    
+    // CCMC Content Sub Navigation Switching Rules
+    if(type === 'add' || type === 'library' || type === 'notify' || type === 'credits') {
+      switchSection('ccmc');
+      document.querySelectorAll('.c-page-view').forEach(p => p.classList.remove('active'));
+      
+      if(type === 'add') {
+        document.getElementById('c-panel-add').classList.add('active');
+        document.getElementById('mNavAdd').classList.add('active');
+      } else if(type === 'library') {
+        document.getElementById('c-panel-library').classList.add('active');
+        document.getElementById('mNavLib').classList.add('active');
+      }
+    } else {
+      // Ultra Management System Router Sync Trigger rules
+      switchSection('ultra');
+      switchUltraTab(type);
+      document.getElementById(type === 'requests' ? 'mNavReq' : 'mNavId').classList.add('active');
+    }
+  }
+
+  function switchUltraTab(targetTab) {
     currentActiveTab = targetTab;
     document.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-tabs .nav-btn').forEach(b => b.classList.remove('active'));
     
     document.getElementById('panel-' + targetTab).classList.add('active');
-    document.getElementById('tabBtn' + targetTab.charAt(0).toUpperCase() + targetTab.slice(1)).classList.add('active');
+    const tabElement = document.getElementById('tabBtn' + targetTab.charAt(0).toUpperCase() + targetTab.slice(1));
+    if(tabElement) tabElement.classList.add('active');
 
     if(targetTab === 'requests') {
       document.getElementById('mass-action-area').style.display = 'block';
@@ -375,88 +653,136 @@
     }
   }
 
-  // Realtime Node Sync: CCMC DB
-  cdb.ref('user_access').on('value', snap => {
-    allAccessUsers = {};
-    snap.forEach(child => { allAccessUsers[child.key] = child.val(); });
-    
-    renderRequests();
-    renderIdTable();
+  function setSubTabScope(panel, scope) {
+    if(panel === 'requests') {
+      currentRequestsScope = scope;
+      document.getElementById('reqRouterSite1').classList.toggle('active', scope === 'site1');
+      document.getElementById('reqRouterSite2').classList.toggle('active', scope === 'site2');
+      renderRequests();
+    } else if(panel === 'idmanager') {
+      currentIdManagerScope = scope;
+      document.getElementById('idRouterSite1').classList.toggle('active', scope === 'site1');
+      document.getElementById('idRouterSite2').classList.toggle('active', scope === 'site2');
+      renderIdTable();
+    }
+  }
 
-    if (!initialDataLoaded) {
-      initialDataLoaded = true;
+  function verifyInitialization() {
+    if(site1Loaded && site2Loaded) {
       document.getElementById('master-loader').style.display = 'none';
       document.getElementById('main-content').style.display = 'block';
     }
+  }
+
+  /* ══════════════════════════════════
+     DATABASE MATRIX REACTION STREAM EVENT SUBSCRIPTION
+  ══════════════════════════════════ */
+  cdbSite1.ref('quiz').on('value', s => { masterQuiz = s.val() || {}; updateCDropdown(); renderChapters(); });
+  cdbSite1.ref('chapter_settings').on('value', s => { chapSettings = s.val() || {}; renderChapters(); });
+
+  cdbSite1.ref('user_access').on('value', snap => {
+    site1AccessUsers = snap.val() || {};
+    site1Loaded = true; renderRequests(); renderIdTable(); verifyInitialization();
   });
 
-  // Realtime Node Sync: FLIX DB (From Site 2)
+  cdbSite2.ref('user_access').on('value', snap => {
+    site2AccessUsers = snap.val() || {};
+    site2Loaded = true; renderRequests(); renderIdTable(); verifyInitialization();
+  });
+
   fdb.ref('server_settings').on('value', snap => {
     const d = snap.val() || {}, st = document.getElementById('flixStatus');
     if (!st) return;
-    
-    if (d.isDown) { 
-      st.className = 'u-flix-status down'; 
-      st.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> &nbsp;SERVER IS DOWN'; 
-    } else { 
-      st.className = 'u-flix-status live'; 
-      st.innerHTML = '<i class="fa-solid fa-circle-dot"></i> &nbsp;SERVER IS LIVE'; 
-    }
+    st.className = 'u-flix-status ' + (d.isDown ? 'down' : 'live');
+    st.innerHTML = d.isDown ? '<i class="fa-solid fa-circle-xmark"></i> SERVER IS DOWN' : '<i class="fa-solid fa-circle-dot"></i> SERVER IS LIVE';
     
     const s1 = document.getElementById('siteBtn1'), s2 = document.getElementById('siteBtn2');
-    if (s1) s1.classList.toggle('active', d.active_site === '1');
-    if (s2) s2.classList.toggle('active', d.active_site === '2');
+    if (s1 && s2) {
+      if (d.active_site === '1') {
+        s1.className = 'u-btn u-btn-block u-btn-active-route';
+        s2.className = 'u-btn u-btn-block u-btn-inactive-route';
+      } else if (d.active_site === '2') {
+        s1.className = 'u-btn u-btn-block u-btn-inactive-route';
+        s2.className = 'u-btn u-btn-block u-btn-active-route';
+      }
+    }
   });
 
   function setFlixPower(s) { fdb.ref('server_settings').update({ isDown: s }); }
   function setFlixSite(n) { fdb.ref('server_settings').update({ active_site: n }); }
 
-  // Renderer: Access Requests Sub-System
+  /* ══════════════════════════════════
+     IDENTITY STATE PROCESSING MUTATION MATRIX (PHAT-SE RESPONSE V2)
+  ══════════════════════════════════ */
   function renderRequests() {
-    const cont = document.getElementById('reqList');
-    if (!cont) return;
+    if (currentActiveTab !== 'requests') return;
+    const cont = document.getElementById('reqList'); if (!cont) return;
     const sv = (document.getElementById('reqSearch').value || '').toLowerCase().trim();
     
-    let pending = Object.entries(allAccessUsers).filter(([k, v]) => v.status === 'pending');
+    let targetDataset = currentRequestsScope === 'site1' ? site1AccessUsers : site2AccessUsers;
+    let pending = Object.entries(targetDataset).filter(([k, v]) => v.status === 'pending');
     if (sv) pending = pending.filter(([k, v]) => (v.name || k).toLowerCase().includes(sv));
     
     if (pending.length === 0) {
-      cont.innerHTML = `<div class="u-empty"><i class="fa-solid fa-inbox"></i><p>${sv ? 'Koi results nahi mile' : 'Koi pending request nahi hai'}</p></div>`; 
+      cont.innerHTML = `<div class="u-empty"><i class="fa-solid fa-inbox"></i><p>Is pipeline par koi pending request nahi hai</p></div>`; 
       return; 
     }
 
     cont.innerHTML = pending.map(([key, u]) => {
       const autoId = genAccessId();
+      const badgeLayout = currentRequestsScope === 'site1' ? '<span class="u-badge ubg-c">(UPLOAD QUESTION TERMINAL)</span>' : '<span class="u-badge ubg-p">(ALL QUESTION)</span>';
       return `
         <div class="u-rcard" id="req-${key}">
           <div class="u-rhead">
-            <div class="u-rname">${u.name || key} <span class="u-badge ubg-g">NEW</span></div>
+            <div class="u-rname">${u.name || key} ${badgeLayout}</div>
             <div class="u-rtime">${u.requestedAtStr || '—'}</div>
           </div>
           <div class="u-rbody">
-            <div style="font-size:11px;color:rgba(212,238,240,.30);font-weight:600;margin-bottom:10px">
-              <i class="fa-solid fa-key" style="color:var(--p2);margin-right:6px"></i>Access ID assign karein
-            </div>
             <div class="u-rid-row">
-              <input type="text" id="rid-${key}" class="u-rid-inp" placeholder="CCMC-XXXX" value="${autoId}">
-              <button class="u-btn u-btn-p" onclick="document.getElementById('rid-${key}').value=genAccessId()"><i class="fa-solid fa-rotate"></i> New</button>
+              <input type="text" id="rid-${key}" class="u-rid-inp" value="${autoId}">
+              <button class="u-gen-btn" onclick="document.getElementById('rid-${key}').value=genAccessId()"><i class="fa-solid fa-rotate"></i></button>
             </div>
             <div class="u-ract-row">
-              <button class="u-ap-btn" onclick="approveRequest('${key}')"><i class="fa-solid fa-check"></i> Approve &amp; Grant Access</button>
-              <button class="u-rj-btn" onclick="rejectRequest('${key}')"><i class="fa-solid fa-xmark"></i> Reject</button>
+              <button class="u-ap-btn" onclick="approveRequest('${key}', '${currentRequestsScope}')"><i class="fa-solid fa-check"></i> Approve</button>
+              <button class="u-rj-btn" onclick="rejectRequest('${key}', '${currentRequestsScope}')"><i class="fa-solid fa-xmark"></i> Reject</button>
             </div>
           </div>
         </div>`;
     }).join('');
   }
 
-  // Renderer: Identity Management Engine
+  function approveRequest(key, scope) {
+    const inp = document.getElementById('rid-' + key);
+    const accessId = (inp ? inp.value.trim() : '') || genAccessId();
+    const targetDatabase = scope === 'site1' ? cdbSite1 : cdbSite2;
+
+    const card = document.getElementById('req-' + key);
+    if(card) { card.style.opacity = '0'; setTimeout(() => card.remove(), 150); }
+
+    targetDatabase.ref('user_access/' + key).update({ 
+      status: 'approved', accessId, approvedAt: Date.now(), approvedAtStr: new Date().toLocaleString() 
+    });
+  }
+
+  function rejectRequest(key, scope) {
+    if (!confirm('Reject karein?')) return;
+    const targetDatabase = scope === 'site1' ? cdbSite1 : cdbSite2;
+    
+    const card = document.getElementById('req-' + key);
+    if(card) { card.style.opacity = '0'; setTimeout(() => card.remove(), 150); }
+
+    targetDatabase.ref('user_access/' + key).update({ 
+      status: 'blocked', rejectedAt: Date.now(), rejectedAtStr: new Date().toLocaleString() 
+    });
+  }
+
   function renderIdTable() {
-    const tbody = document.getElementById('idTableBody');
-    if (!tbody) return;
+    if (currentActiveTab !== 'idmanager') return;
+    const tbody = document.getElementById('idTableBody'); if (!tbody) return;
     const search = (document.getElementById('idSearch').value || '').toLowerCase().trim();
     
-    const filtered = Object.entries(allAccessUsers).filter(([k, v]) =>
+    let targetDataset = currentIdManagerScope === 'site1' ? site1AccessUsers : site2AccessUsers;
+    const filtered = Object.entries(targetDataset).filter(([k, v]) =>
       !search || (v.name || '').toLowerCase().includes(search) || (v.accessId || '').toLowerCase().includes(search)
     );
 
@@ -468,80 +794,186 @@
     tbody.innerHTML = filtered.map(([key, u]) => {
       const isApproved = u.status === 'approved', isFrozen = u.status === 'frozen', isBlocked = u.status === 'blocked';
       const sbCls = isApproved ? 'ubg-g' : (isFrozen ? 'ubg-y' : (isBlocked ? 'ubg-r' : 'ubg-p'));
-      const sbLabel = (u.status || 'PENDING').toUpperCase();
       
       const freezeBtn = isFrozen
-        ? `<button class="u-tbtn u-tbtn-unblock" onclick="updateStatus('${key}','approved')"><i class="fa-solid fa-sun"></i> Unfreeze</button>`
-        : `<button class="u-tbtn" onclick="updateStatus('${key}','frozen')"><i class="fa-solid fa-snowflake"></i> Freeze</button>`;
+        ? `<button class="u-tbtn u-tbtn-unblock" onclick="updateStatus('${key}','approved','${currentIdManagerScope}', this)"><i class="fa-solid fa-sun"></i> Unfreeze</button>`
+        : `<button class="u-tbtn" onclick="updateStatus('${key}','frozen','${currentIdManagerScope}', this)"><i class="fa-solid fa-snowflake"></i> Freeze</button>`;
       
       const blockBtn = isBlocked
-        ? `<button class="u-tbtn u-tbtn-unblock" onclick="updateStatus('${key}','approved')"><i class="fa-solid fa-lock-open"></i> Unblock</button>`
-        : `<button class="u-tbtn" onclick="updateStatus('${key}','blocked')"><i class="fa-solid fa-lock"></i> Block</button>`;
+        ? `<button class="u-tbtn u-tbtn-unblock" onclick="updateStatus('${key}','approved','${currentIdManagerScope}', this)"><i class="fa-solid fa-lock-open"></i> Unblock</button>`
+        : `<button class="u-tbtn" onclick="updateStatus('${key}','blocked','${currentIdManagerScope}', this)"><i class="fa-solid fa-lock"></i> Block</button>`;
 
       return `
-        <div class="u-trow">
+        <div class="u-trow" id="idrow-${key}">
           <div class="u-tc-name">${u.name || key}</div>
-          <div class="u-tc-acts">
-            ${freezeBtn}
-            ${blockBtn}
-            <button class="u-tbtn u-tbtn-del" onclick="deleteUser('${key}')"><i class="fa-solid fa-trash"></i></button>
-          </div>
+          <div class="u-tc-acts">${freezeBtn}${blockBtn}<button class="u-tbtn u-tbtn-del" onclick="deleteUser('${key}','${currentIdManagerScope}')"><i class="fa-solid fa-trash"></i></button></div>
           <div class="u-tc-meta">
             ${u.accessId ? `<span class="u-tid">${u.accessId}</span>` : ''}
-            <span class="u-badge ${sbCls}">${sbLabel}</span>
-            <span class="u-tdate">${u.requestedAtStr || ''}</span>
+            <span class="u-badge ${sbCls}" id="badge-val-${key}">${(u.status || 'PENDING').toUpperCase()}</span>
           </div>
         </div>`;
     }).join('');
   }
 
-  // Core Mutation Set 1: Individual Database Processor Rules
-  function approveRequest(key) { 
-    const inp = document.getElementById('rid-' + key); 
-    const accessId = (inp ? inp.value.trim() : '') || genAccessId(); 
-    cdb.ref('user_access/' + key).update({ 
-      status: 'approved', 
-      accessId, 
-      approvedAt: Date.now(), 
-      approvedAtStr: new Date().toLocaleString() 
-    }); 
+  function updateStatus(key, targetStatus, scope, btnElement) {
+    const targetDatabase = scope === 'site1' ? cdbSite1 : cdbSite2;
+    const badge = document.getElementById('badge-val-' + key);
+    if(badge) {
+      badge.innerText = targetStatus.toUpperCase();
+      badge.className = 'u-badge ' + (targetStatus === 'approved' ? 'ubg-g' : (targetStatus === 'frozen' ? 'ubg-y' : 'ubg-r'));
+    }
+    
+    const actsContainer = btnElement.parentElement;
+    if(actsContainer) {
+      const isFrozen = targetStatus === 'frozen';
+      const isBlocked = targetStatus === 'blocked';
+      const freezeBtn = isFrozen
+        ? `<button class="u-tbtn u-tbtn-unblock" onclick="updateStatus('${key}','approved','${scope}', this)"><i class="fa-solid fa-sun"></i> Unfreeze</button>`
+        : `<button class="u-tbtn" onclick="updateStatus('${key}','frozen','${scope}', this)"><i class="fa-solid fa-snowflake"></i> Freeze</button>`;
+      const blockBtn = isBlocked
+        ? `<button class="u-tbtn u-tbtn-unblock" onclick="updateStatus('${key}','approved','${scope}', this)"><i class="fa-solid fa-lock-open"></i> Unblock</button>`
+        : `<button class="u-tbtn" onclick="updateStatus('${key}','blocked','${scope}', this)"><i class="fa-solid fa-lock"></i> Block</button>`;
+        
+      actsContainer.innerHTML = `${freezeBtn}${blockBtn}<button class="u-tbtn u-tbtn-del" onclick="deleteUser('${key}','${scope}')"><i class="fa-solid fa-trash"></i></button>`;
+    }
+    
+    targetDatabase.ref('user_access/' + key).update({ status: targetStatus });
   }
 
-  function rejectRequest(key) { 
-    if (!confirm('Kya aap is request ko reject karna chahte hain? User block list me chala jayega.')) return; 
-    cdb.ref('user_access/' + key).update({ 
-      status: 'blocked', 
-      rejectedAt: Date.now(), 
-      rejectedAtStr: new Date().toLocaleString() 
-    }); 
+  function deleteUser(key, scope) {
+    if (!confirm('Completely delete account?')) return;
+    const targetDatabase = scope === 'site1' ? cdbSite1 : cdbSite2;
+    const row = document.getElementById('idrow-' + key);
+    if(row) { row.style.opacity = '0'; setTimeout(() => row.remove(), 150); }
+    targetDatabase.ref('user_access/' + key).remove();
   }
 
-  // Core Mutation Set 2: Identity State Changers 
-  function updateStatus(key, targetStatus) {
-    cdb.ref('user_access/' + key).update({ status: targetStatus });
-  }
-
-  function deleteUser(key) {
-    if (!confirm('Kya aap is student account ko completely database se delete karna chahte hain?')) return;
-    cdb.ref('user_access/' + key).remove();
-  }
-
-  // Core Mutation Set 3: Batch Execution Processor
-  function approveAll() {
-    if (!confirm('Sabhi pending requests ko ek sath approve karein?')) return;
-    const pending = Object.entries(allAccessUsers).filter(([k, v]) => v.status === 'pending');
+  function handleApproveAll() {
+    if (!confirm(`Kya aap currently selected scope ki sabhi requests ko approve karna chahte hain?`)) return;
+    let targetDataset = currentRequestsScope === 'site1' ? site1AccessUsers : site2AccessUsers;
+    const targetDatabase = currentRequestsScope === 'site1' ? cdbSite1 : cdbSite2;
+    const pending = Object.entries(targetDataset).filter(([k, v]) => v.status === 'pending');
+    
+    document.getElementById('reqList').innerHTML = `<div class="u-empty"><p>Processing approvals instantly...</p></div>`;
     const updates = {};
-    
     pending.forEach(([key]) => { 
-      const accessId = genAccessId(); 
-      updates[`user_access/${key}/status`] = 'approved'; 
-      updates[`user_access/${key}/accessId`] = accessId; 
-      updates[`user_access/${key}/approvedAt`] = Date.now(); 
-      updates[`user_access/${key}/approvedAtStr`] = new Date().toLocaleString(); 
+      const accessId = genAccessId(); updates[`user_access/${key}/status`] = 'approved'; updates[`user_access/${key}/accessId`] = accessId; updates[`user_access/${key}/approvedAt`] = Date.now(); updates[`user_access/${key}/approvedAtStr`] = new Date().toLocaleString(); 
     });
-    
-    cdb.ref().update(updates);
+    targetDatabase.ref().update(updates);
   }
+
+  /* ══════════════════════════════════
+     CCMC MODULE CONTROL TERMINAL ARCHITECTURE
+  ══════════════════════════════════ */
+  async function uploadToImgBB(input){
+    const file = input.files[0]; if(!file) return;
+    const fd = new FormData(); fd.append('image', file);
+    try {
+      const r = await fetch('https://api.imgbb.com/1/upload?key=50af9f5367ae25509851af1e1ecf62b6',{ method:'POST', body:fd });
+      const d = await r.json();
+      if(d.success){ document.getElementById('imgUrl').value = d.data.url; handleUrlInput(d.data.url); }
+    } catch(e) { alert('Upload Error'); }
+  }
+
+  function handleUrlInput(url){ updateCPreview(url); if(url.startsWith('http')) cdbSite1.ref('image_gallery').push({url, timestamp:Date.now()}); }
+  function updateCPreview(url){ document.getElementById('pBox').innerHTML = url.trim() ? `<img src="${url}">` : '<span>No Image Preview</span>'; }
+  
+  function updateCDropdown(){ 
+    const sel = document.getElementById('chapSelect'), cur = sel.value; 
+    sel.innerHTML='<option value="">-- Chapter Select Karein --</option><option value="NEW">+ Naya Chapter Banao</option>'; 
+    Object.keys(masterQuiz).forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`); 
+    sel.value=cur; 
+  }
+  function checkNew(){ document.getElementById('newChapName').style.display = (document.getElementById('chapSelect').value==='NEW') ? 'block' : 'none'; }
+
+  function renderChapters(){
+    const cont = document.getElementById('chapterListContainer'); if(!cont) return;
+    const term = (document.getElementById('cSearch')||{value:''}).value.toLowerCase(); cont.innerHTML='';
+    const keys = Object.keys(masterQuiz).filter(c=>c.toLowerCase().includes(term));
+    document.getElementById('libCount').innerText = Object.keys(masterQuiz).length;
+    keys.forEach(c => {
+      const s = chapSettings[c] || {hidden:false, timer:0};
+      cont.innerHTML += `<div class="c-chap-item ${s.hidden?'hid':''}"><div class="c-chap-top"><div class="c-chap-info" onclick="viewCQuestions('${c}')"><div class="c-chap-name">${c} ${s.hidden?'<small style="color:var(--sy)">(Hidden)</small>':''}</div><div class="c-chap-meta">${Object.keys(masterQuiz[c]).length} Qs · ${s.timer||0} min</div></div><div class="c-chap-acts"><i class="fa-solid fa-pencil c-ie" onclick="renameCChapter('${c}')"></i><i class="fa-solid ${s.hidden?'fa-eye-slash':'fa-eye'} c-iv" onclick="toggleCVis('${c}',${s.hidden})"></i><i class="fa-solid fa-trash c-id" onclick="askDelete('chap','${c}')"></i></div></div><div class="c-timer-row"><input type="number" id="t-${c}" class="c-t-inp" value="${s.timer||0}"><button class="c-t-btn" onclick="saveCTimer('${c}')">Set</button></div></div>`;
+    });
+  }
+
+  function renameCChapter(old){ const n = prompt('Naya naam:', old); if(!n||n===old) return; const u = {['/quiz/'+n]:masterQuiz[old],['/quiz/'+old]:null}; if(chapSettings[old]){ u['/chapter_settings/'+n]=chapSettings[old]; u['/chapter_settings/'+old]=null; } cdbSite1.ref().update(u); }
+  function saveCTimer(c){ const m = parseInt(document.getElementById('t-'+c).value)||0; cdbSite1.ref('chapter_settings/'+c).update({timer:m}); }
+  function toggleCVis(c,h){ cdbSite1.ref('chapter_settings/'+c).update({hidden:!h}); }
+
+  function editCQuestion(chap,id){
+    const d = masterQuiz[chap][id];
+    editMode = { active:true, chap, qId:id };
+    document.getElementById('cFormTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Editing Question Mode';
+    document.getElementById('chapSelect').value = chap;
+    document.getElementById('question').value = d.q;
+    document.getElementById('imgUrl').value = d.img||'';
+    updateCPreview(d.img||'');
+    document.querySelectorAll('.c-opt').forEach((i,idx)=>i.value=d.options[idx]);
+    const r = document.querySelectorAll('input[name="ans"]'); if(r[d.ans]) r[d.ans].checked=true;
+    document.getElementById('submitBtn').innerText = 'Update Question Data';
+    document.getElementById('cancelEditBtn').style.display = 'block';
+    closeCModal('qModal');
+    triggerBottomNav('add');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function resetCForm(){ 
+    editMode={active:false,chap:null,qId:null}; 
+    document.getElementById('cFormTitle').innerHTML = '<i class="fa-solid fa-plus-circle"></i> Add New Question';
+    document.getElementById('question').value=''; 
+    document.getElementById('imgUrl').value=''; 
+    updateCPreview(''); 
+    document.querySelectorAll('.c-opt').forEach(i=>i.value=''); 
+    document.querySelectorAll('input[name="ans"]').forEach(r=>r.checked=false);
+    document.getElementById('submitBtn').innerText = 'Database Mein Save Karein';
+    document.getElementById('cancelEditBtn').style.display = 'none';
+  }
+
+  function saveData(){
+    const sel = document.getElementById('chapSelect'), chap = (sel.value==='NEW') ? document.getElementById('newChapName').value.trim() : sel.value;
+    const qText = document.getElementById('question').value.trim(), imgUrl = document.getElementById('imgUrl').value.trim();
+    const opts = Array.from(document.querySelectorAll('.c-opt')).map(i=>i.value.trim());
+    const ans = document.querySelector('input[name="ans"]:checked');
+    if(!chap||!qText||!ans||opts.some(o=>o==='')) return alert('Form incomplete!');
+    const payload = { q:qText, img:imgUrl, options:opts, ans:parseInt(ans.value) };
+    
+    if(editMode.active){ 
+      if(editMode.chap !== chap) { cdbSite1.ref('quiz/'+editMode.chap+'/'+editMode.qId).remove(); }
+      cdbSite1.ref('quiz/'+chap+'/'+editMode.qId).set(payload).then(() => { alert('Question Updated Successfully!'); resetCForm(); }); 
+    }
+    else { cdbSite1.ref('quiz/'+chap).push(payload).then(() => { alert('Question Saved Successfully!'); resetCForm(); }); }
+  }
+
+  function viewCQuestions(chap){
+    openCModal('qModal'); document.getElementById('qTitle').innerText = chap;
+    const cont = document.getElementById('qListContainer'); cont.innerHTML='';
+    const keys = Object.keys(masterQuiz[chap]||{});
+    if(!keys.length){ cont.innerHTML='<div style="text-align:center;padding:20px;color:var(--tx4);">No questions in this chapter</div>'; return; }
+    keys.forEach(id => {
+      const q = masterQuiz[chap][id];
+      const imgH = q.img ? `<img class="c-q-thumb" src="${q.img}">` : `<div class="c-q-no-img"><i class="fa-solid fa-image"></i></div>`;
+      cont.innerHTML += `<div class="c-q-item">${imgH}<div class="c-q-txt"><div>${q.q}</div><div class="c-q-meta">Ans: ${q.options[q.ans]||'—'}</div></div><div class="c-q-acts"><i class="fa-solid fa-pen-to-square c-ie" onclick="editCQuestion('${chap}','${id}')"></i><i class="fa-solid fa-trash c-id" onclick="askDelete('q','${chap}','${id}')"></i></div></div>`;
+    });
+  }
+
+  function sendNotification(){
+    const msg = document.getElementById('notifyMsg').value.trim(); if(!msg) return alert('Message body empty!');
+    cdbSite1.ref('app_notification').set({message:msg, time:new Date().toLocaleString(), id:Date.now()}).then(()=>{ alert('Notification Sync Out!'); document.getElementById('notifyMsg').value=''; });
+  }
+
+  function askDelete(type,p1,p2){ delT={type,p1,p2}; document.getElementById('confirmOv').style.display='flex'; }
+  function closeConfirm(){ document.getElementById('confirmOv').style.display='none'; }
+  function execDel(){
+    if(delT.type==='chap'){ cdbSite1.ref('quiz/'+delT.p1).remove(); cdbSite1.ref('chapter_settings/'+delT.p1).remove(); }
+    else if(delT.type==='q'){ cdbSite1.ref('quiz/'+delT.p1+'/'+delT.p2).remove().then(()=>viewCQuestions(delT.p1)); }
+    closeConfirm();
+  }
+
+  function openGallery(){ openCModal('galleryModal'); const g=document.getElementById('galleryGrid'); g.innerHTML=''; cdbSite1.ref('image_gallery').once('value',snap=>{ Object.entries(snap.val()||{}).forEach(([k,v])=>g.innerHTML+=`<div class="c-gal-item"><img src="${v.url}" onclick="document.getElementById('imgUrl').value='${v.url}';updateCPreview('${v.url}');closeCModal('galleryModal')"><button class="c-gal-del" onclick="event.stopPropagation();if(confirm('Remove?')){cdbSite1.ref('image_gallery/${k}').remove();openGallery();}"><i class="fa-solid fa-xmark"></i></button></div>`); }); }
+  function openCModal(id){ document.getElementById(id).classList.add('show'); }
+  function closeCModal(id){ document.getElementById(id).classList.remove('show'); }
+  function openPostImages(){ window.open('https://danishansari.netlify.app'); }
 </script>
 </body>
 </html>
